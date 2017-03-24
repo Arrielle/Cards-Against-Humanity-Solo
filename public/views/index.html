@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Playing With Sockets</title>
+    <!-- <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.6/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/X.Y.Z/angular-route.js"></script>
+    <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script> -->
+    <!-- <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script> -->
+    <!-- <script src="https://code.jquery.com/jquery-1.11.1.js"></script> -->
+    <!-- Latest compiled and minified CSS -->
+    <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous"> -->
+
+
+
+    <script type="text/javascript" src="/vendor/angular.min.js"></script>
+    <script type="text/javascript" src="/vendor/angular-route.min.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script src="/vendor/socket.io.js"></script>
+    <link rel="stylesheet" href="/vendor/bootstrap.min.css" />
+    <link rel="stylesheet" href="/css/style.css" />
+
+
+  </head>
+
+  <body>
+    <h1>Sockets!</h1>
+
+    <button ng-click="" type="button" name="button">Create a New Game</button>
+    <br>
+
+    <script>
+    var io = io.connect();
+
+    io.on('connect', function() {
+      io.emit('game_connect');
+    });
+
+
+    var game_connected = function() {
+      console.log('what is going on', io);
+      var url = "http://204.62.150.131:3000?id=" + io.id;
+      document.body.innerHTML += url;
+      io.removeListener('game_connected', game_connected);
+    };
+
+    io.on('game_connected', game_connected);
+
+    </script>
+
+
+  </body>
+</html>

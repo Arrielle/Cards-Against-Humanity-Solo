@@ -3,11 +3,13 @@
   "version": "0.0.1",
   "description": "my first socket.io app",
   "dependencies": {
+    "angular": "^1.6.3",
+    "angular-route": "^1.6.3",
     "express": "^4.15.2",
     "socket.io": "^1.7.3"
   },
   "scripts": {
-    "start": "node index.js",
-    "test": "nodemon index.js"
+    "start": "node server/app.js",
+    "test": "nodemon server/app.js"
   }
 }
