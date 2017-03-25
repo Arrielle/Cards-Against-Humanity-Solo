@@ -3,8 +3,10 @@ var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var port = process.env.PORT || 3000;
-var cah = require('./routes/gamelogic');
 var path = require('path');
+
+// Routes/Modules
+var cah = require('./routes/gamelogic');
 
 // Serve index file
 app.get('/', function(req, res) {
