@@ -3,7 +3,6 @@ myApp.controller('HomeController',function() {
   var self = this;
   self.message = 'Welcome to the Home View!';
 
-  // App.$doc.on('click', '#btnCreateGame', App.Host.onCreateClick);
   var socket = io();
 
   self.onCreateClick = function () {
@@ -11,30 +10,26 @@ myApp.controller('HomeController',function() {
     socket.emit('hostCreateNewGame');
   }
 
-  socket.on('newGameCreated', function (data) {
-    console.log(data);
-  });
-
-
   socket.on('newGameCreated', onNewGameCreated );
 
   function onNewGameCreated(data) {
-    console.log('do I get to on new game created? -- YUP!');
     gameInit(data);
-    console.log(App);
+    console.log('hit: ok');
   }
 
   function gameInit(data) {
-    App.gameId = data.gameId;
-    App.mySocketId = data.mySocketId;
-    App.myRole = 'Host';
-    App.isStarted = true;
+    self.App.gameId = data.gameId;
+    self.App.mySocketId = data.mySocketId;
+    self.App.myRole = 'Host';
+    self.App.isStarted = true;
     // App.Host.numPlayersInRoom = 0;
-    displayNewGameScreen();
-    console.log("Game started with ID: " + App.gameId + ' by host: ' + App.mySocketId);
+    displayNewGameScreen(self.App);
+    console.log("Game started with ID: " + self.App.gameId + ' by host: ' + self.App.mySocketId);
+    console.log('self.App on game init?', self.App);
+
   }
 
-  var App = {
+  self.App = {
     // Keep track of the gameId, which is identical to the ID
     //of the Socket.IO Room used for the players and host to communicate
     gameId: 0,
@@ -48,20 +43,31 @@ myApp.controller('HomeController',function() {
     //to the array of winnign black cards stored on the server.
     currentRound: 0,
     isStarted: false,
+    host: {
+      numPlayersInRoom: 0,
+      isNewGame: false,
+      players: [],
+      currentBlackCard: null,
+      currentRound: 0,
+
+    }
   }
 
-  function  displayNewGameScreen() {
+  console.log('self.App before game start?', self.App)
+
+  function displayNewGameScreen(appStatus) {
     // Fill the game screen with the appropriate HTML
     // turn game on?
     // App.$gameArea.html(App.$templateNewGame);
 
     // Display the URL on screen so people can connect?
-    // $('#gameURL').text(window.location.href);
+    $('#gameURL').text(window.location.href);
     // App.doTextFit('#gameURL');
 
     // Show the gameId / room id on screen
-    // $('#spanNewGameCode').text(App.gameId);
-    console.log('room id and stuff', App.gameId);
+    $('#spanNewGameCode').text(self.App.gameId);
+
+    console.log('Is the game started when I hit displayNewGameScreen?', appStatus.isStarted);
   }
 
 });

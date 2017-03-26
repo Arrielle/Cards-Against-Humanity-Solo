@@ -19,6 +19,6 @@ myApp.config(['$routeProvider', function($routeProvider) {
         //     controllerAs: 'pc'
         // })
         .otherwise({
-            redirectTo: 'home'
+            redirectTo: '/'
         });
 }]);

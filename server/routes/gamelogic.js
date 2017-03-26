@@ -5,11 +5,8 @@ exports.initGame = function(sio, socket){
   io = sio;
   gameSocket = socket;
 
-
   gameSocket.emit('connected', { message: "You are connected!" });
   gameSocket.on('hostCreateNewGame', hostCreateNewGame);
-
-
 }
 
 /* *******************************
@@ -23,18 +20,13 @@ function hostCreateNewGame() {
     var thisGameId = ( Math.random() * 100000 ) | 0;
     // Return the Room ID (gameId) and the socket ID (mySocketId) to the browser client
     this.emit('newGameCreated', {gameId: thisGameId, mySocketId: this.id});
-    console.log('do I get to host create new game -- yup');
+    console.log('Host has created a new game!');
     console.log('Game ID: ', thisGameId, 'Socket ID: ', this.id);
     // Join the Room and wait for the players
     this.join(thisGameId.toString());
 };
 
 
-
-
-
-  // gameSocket.emit('connected', { message: "You are connected!" });
-  // gameSocket.on('hostCreateNewGame', hostCreateNewGame);
 
 //HOST EVENTS
   //START A NEW GAME

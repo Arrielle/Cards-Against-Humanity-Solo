@@ -1,5 +1,15 @@
-{{hc.message}}}
+{{hc.message}}
 <br>
 <br>
 <button ng-click="hc.onCreateClick()" type="button" name="button">Create a New Game</button>
 <br>
+<span id="spanNewGameCode"></span>
+<br>
+<span id="gameURL"></span>
+
+<div ng-show="hc.App.isStarted">
+<h2>The game has started!</h2>
+Here is your game ID: {{hc.App.gameId}}
+<br>
+Here is your socket ID: {{hc.App.mySocketId}}
+</div>
