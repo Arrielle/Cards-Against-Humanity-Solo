@@ -1,20 +1,32 @@
-myApp.controller('HomeController',function() {
+myApp.controller('HomeController', ['$scope', function($scope) {
   console.log('home controller running');
   var self = this;
-  self.message = 'Welcome to the Home View!';
-
   var socket = io();
 
+  self.message = 'Welcome to the Home View!';
+  self.link = window.location.origin;
+
+  //*******************************//
+  //                               //
+  //    Host Join/Game Creation    //
+  //                               //
+  //*******************************//
+
+  //When the Create new game button is clicked on the DOM, hostCreateNewGame is sent to the server
+  //Which in turn emits newGameCreated back to the client
+  //Which then runs the onNewGameCreated function
+  //Which then spins up the new game information
   self.onCreateClick = function () {
     console.log('Clicked "Create A Game"');
     socket.emit('hostCreateNewGame');
   }
-
   socket.on('newGameCreated', onNewGameCreated );
 
   function onNewGameCreated(data) {
-    gameInit(data);
-    console.log('hit: ok');
+    //$scope.$apply allows angular to see the results even though it's happening outside of angular (sockets).
+    //$apply() is used to execute an expression in angular from outside of the angular framework.
+    //Because we are calling into the angular framework we need to perform proper scope life cycle of exception handling, executing watches.
+    $scope.$apply(gameInit(data));
   }
 
   function gameInit(data) {
@@ -23,7 +35,6 @@ myApp.controller('HomeController',function() {
     self.App.myRole = 'Host';
     self.App.isStarted = true;
     // App.Host.numPlayersInRoom = 0;
-    displayNewGameScreen(self.App);
     console.log("Game started with ID: " + self.App.gameId + ' by host: ' + self.App.mySocketId);
     console.log('self.App on game init?', self.App);
 
@@ -49,25 +60,49 @@ myApp.controller('HomeController',function() {
       players: [],
       currentBlackCard: null,
       currentRound: 0,
-
+    },
+    player: {
+      myName: null
     }
   }
 
-  console.log('self.App before game start?', self.App)
+  //*******************//
+  //                   //
+  //    Player Join    //
+  //                   //
+  //*******************//
 
-  function displayNewGameScreen(appStatus) {
-    // Fill the game screen with the appropriate HTML
-    // turn game on?
-    // App.$gameArea.html(App.$templateNewGame);
 
-    // Display the URL on screen so people can connect?
-    $('#gameURL').text(window.location.href);
-    // App.doTextFit('#gameURL');
+// //this isn't working yet?!
+//   self.onPlayerStartClick = function() {
+//     console.log('Player clicked "Start"');
+//     //
 
-    // Show the gameId / room id on screen
-    $('#spanNewGameCode').text(self.App.gameId);
+//   }
 
-    console.log('Is the game started when I hit displayNewGameScreen?', appStatus.isStarted);
+  self.onPlayerStartClick = function () {
+    console.log('Player clicked "Start"');
+        // collect data to send to the server
+        var data = {
+          gameId : +($('#inputGameId').val()),
+          playerName : $('#inputPlayerName').val() || 'anon'
+        };
+
+        // console.log(data);
+
+        // Send the gameId and playerName to the server
+        socket.emit('playerJoinGame', data);
+
+        // Set the appropriate properties for the current player.
+        // self.App.myRole = 'Player';
+        // self.App.Player.myName = data.playerName;
+        // // console.log(self.App);
   }
 
-});
+//When a player clicks Join a Game the Join Game view is displayed.
+  self.playerJoinView = function(){
+    console.log('player join clicked');
+    self.playerJoining = true;
+  }
+
+}]);

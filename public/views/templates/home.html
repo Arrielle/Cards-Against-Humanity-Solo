@@ -1,15 +1,23 @@
 {{hc.message}}
 <br>
 <br>
-<button ng-click="hc.onCreateClick()" type="button" name="button">Create a New Game</button>
-<br>
-<span id="spanNewGameCode"></span>
-<br>
-<span id="gameURL"></span>
 
+<!-- HOME TEMPLATE -->
+<!-- <div ng-show="!hc.App.isStarted"> -->
+<button ng-click="hc.onCreateClick()" type="button" name="button">Create a New Game</button>
+<button ng-click="hc.playerJoinView()" type="button" name="button">Join a Game</button>
+<!-- <div> -->
+
+<!-- GAME INITIALIZE TEMPLATE -->
 <div ng-show="hc.App.isStarted">
-<h2>The game has started!</h2>
-Here is your game ID: {{hc.App.gameId}}
-<br>
-Here is your socket ID: {{hc.App.mySocketId}}
+<h2>Open this site on your mobile device {{hc.link}}</h2>
+<h2>Here is your game ID: {{hc.App.gameId}}</h2>
+<h2>Here is your socket ID: {{hc.App.mySocketId}}</h2>
+</div>
+
+<!-- PLAYER JOIN TEMPLATE -->
+<div ng-show ="hc.playerJoining">
+<input id="inputPlayerName" type="text" name="" placeholder="Player Name" value=""/>
+<input id="inputGameId" type="text" name="" placeholder="Game ID" value=""/><br>
+<button ng-click="hc.onPlayerStartClick()" type="button" name="button">Click Start</button>
 </div>

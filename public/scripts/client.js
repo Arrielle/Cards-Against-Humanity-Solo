@@ -8,11 +8,11 @@ myApp.config(['$routeProvider', function($routeProvider) {
             controller: 'HomeController',
             controllerAs: 'hc'
         })
-        // .when('/game', {
-        //   templateUrl: '/views/templates/game.html',
-        //   controller: 'GameController',
-        //   controllerAs: 'gc'
-        // })
+        .when('/game', {
+          templateUrl: '/views/templates/game.html',
+          controller: 'GameController',
+          controllerAs: 'gc'
+        })
         // .when('/player', {
         //     templateUrl: '/views/templates/player.html',
         //     controller: 'PlayerController',
