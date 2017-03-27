@@ -9,6 +9,8 @@ exports.initGame = function(sio, socket){
   // Host Events
   gameSocket.on('hostCreateNewGame', hostCreateNewGame);
   gameSocket.on('hostRoomFull', hostPrepareGame);
+  gameSocket.on('changeHostView', changeHostView);
+  gameSocket.on('changePlayerView', changePlayerView);
   // gameSocket.on('hostCountdownFinished', hostStartGame);
   // gameSocket.on('hostNextRound', hostNextRound);
 
@@ -44,6 +46,11 @@ function hostPrepareGame(gameId) {
     console.log('host prep data', data);
     // console.log("All Players Present. Preparing game...");
     io.sockets.in(data.gameId).emit('beginNewGame', data);
+}
+
+function changeHostView(hostSocketId){
+  console.log('host socket id?', hostSocketId);
+  io.to(hostSocketId).emit('changeHostView');
 }
 
 /* ****************************
@@ -82,4 +89,9 @@ function playerJoinGame(data) {
     // Otherwise, send an error message back to the player.
     this.emit('errorAlert', {message: "Sorry about that! It looks like this room does not exist."} );
   }
+}
+
+function changePlayerView(playerSocketId){
+  console.log('player socket id?', playerSocketId);
+  io.to(playerSocketId).emit('changePlayerView');
 }

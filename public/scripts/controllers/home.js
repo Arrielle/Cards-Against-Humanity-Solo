@@ -16,6 +16,9 @@ myApp.controller('HomeController', ['$scope', function($scope) {
   socket.on('errorAlert', error);
   socket.on('playerJoinedRoom', playerJoinedRoom);
   socket.on('beginNewGame', beginNewGame );
+  socket.on('changeHostView', onChangeHostView);
+  socket.on('changePlayerView', onChangePlayerView)
+
 
   //*************************//
   //                         //
@@ -23,29 +26,30 @@ myApp.controller('HomeController', ['$scope', function($scope) {
   //                         //
   //*************************//
 
-    self.App = {
-      // Keep track of the gameId, which is identical to the ID
-      //of the Socket.IO Room used for the players and host to communicate
-      gameId: 0,
-      //This is used to differentiate between 'Host' and 'Player' browsers.
-      myRole: '',   // 'Player' or 'Host'
-      //The Socket.IO socket object identifier. This is unique for
-      //each player and host. It is generated when the browser initially
-      //connects to the server when the page loads for the first time.
-      mySocketId: '',
-      //Identifies the current round. Starts at 0 because it corresponds
-      //to the array of winnign black cards stored on the server.
-      currentRound: 0,
-      isStarted: false,
-    }
+  self.gameSetup = {
+    // Keep track of the gameId, which is identical to the ID
+    //of the Socket.IO Room used for the players and host to communicate
+    gameId: 0,
+    //This is used to differentiate between 'Host' and 'Player' browsers.
+    myRole: '',   // 'Player' or 'Host'
+    //The Socket.IO socket object identifier. This is unique for
+    //each player and host. It is generated when the browser initially
+    //connects to the server when the page loads for the first time.
+    mySocketId: '',
+    //Identifies the current round. Starts at 0 because it corresponds
+    //to the array of winnign black cards stored on the server.
+    currentRound: 0,
+    isStarted: false,
+  }
 
-    self.host = {
-      numPlayersInRoom: 0,
-      isNewGame: false,
-      players: [],
-      currentBlackCard: null,
-      currentRound: 0,
-    }
+  self.host = {
+    numPlayersInRoom: 0,
+    hostSocketId: null,
+    isNewGame: false,
+    players: [],
+    currentBlackCard: null,
+    currentRound: 0,
+  }
 
   //*******************************//
   //                               //
@@ -70,13 +74,14 @@ myApp.controller('HomeController', ['$scope', function($scope) {
   }
 
   function gameInit(data) {
-    self.App.gameId = data.gameId;
-    self.App.mySocketId = data.mySocketId;
-    self.App.myRole = 'Host';
-    self.App.isStarted = true;
-    // App.Host.numPlayersInRoom = 0;
-    console.log("Game started with ID: " + self.App.gameId + ' by host: ' + self.App.mySocketId);
-    console.log('self.App on game init?', self.App);
+    self.gameSetup.gameId = data.gameId;
+    self.gameSetup.mySocketId = data.mySocketId;
+    self.host.hostSocketId = data.mySocketId;
+    self.gameSetup.myRole = 'Host';
+    self.gameSetup.isStarted = true;
+    // gameSetup.Host.numPlayersInRoom = 0;
+    console.log("Game started with ID: " + self.gameSetup.gameId + ' by host: ' + self.gameSetup.mySocketId);
+    console.log('self.gameSetup on game init?', self.gameSetup);
 
   }
 
@@ -85,7 +90,8 @@ myApp.controller('HomeController', ['$scope', function($scope) {
   //    Player Join    //
   //                   //
   //*******************//
-
+  self.gameId = null;
+  self.playerName = null
 
   function error(data) {
     console.log('error?', data);
@@ -94,80 +100,92 @@ myApp.controller('HomeController', ['$scope', function($scope) {
 
   //player has clicked start
   self.onPlayerStartClick = function () {
-      // collect data to send to the server
-      var data = {
-        gameId : +($('#inputGameId').val()),
-        playerName : $('#inputPlayerName').val() || 'anon',
-        numPlayersInRoom : self.host.numPlayersInRoom,
-        roomStatus: '!full'
-      };
-      socket.emit('playerJoinGame', data);
-
-    // Set the appropriate properties for the current player.
-    // self.App.myRole = 'Player';
-    // self.App.Player.myName = data.playerName;
-    // // console.log(self.App);
+    // collect data to send to the server
+    var data = {
+      gameId : self.gameId,
+      playerName : self.playerName,
+      numPlayersInRoom : self.host.numPlayersInRoom,
+    };
+    socket.emit('playerJoinGame', data);
   }
 
   //When a player clicks Join a Game the Join Game view is displayed.
   self.playerJoinView = function(){
-    // console.log('player join clicked');
     console.log(self.host.players);
     self.playerJoining = true;
   }
 
-  //
   function playerJoinedRoom(data) {
     // When a player joins a room, do the updateWaitingScreen funciton.
     // There are two versions of this function: one for the 'host' and
     // another for the 'player'.
-    //
-    // On the 'host' browser window, the App.Host.updateWiatingScreen function is called.
-    // And on the player's browser, App.Player.updateWaitingScreen is called.
-      updatePlayerWaitingScreen(data);
-      updateWaitingScreen(data);
+    updatePlayerWaitingScreen(data);
+    updateWaitingScreen(data);
   }
   //
   function updateWaitingScreen(data) {
-    // If this is a restarted game, show the screen.
-    // if ( self.host.isNewGame ) {
-    //   // App.Host.displayNewGameScreen();
-    // }
     // Update host screen
-    // console.log(data.playerName);
     $('#playersWaiting').append('<p/>Player ' + data.playerName + ' joined the game.</p>');
     // Store the new player's data on the Host.
-    // console.log('update screen data', data);
     self.host.players.push(data);
-
     // Increment the number of players in the room
     self.host.numPlayersInRoom += 1;
-    // console.log('numPlayersInRoom', self.host.numPlayersInRoom);
-    // If four players have joined, start the game!
+    // If x players have joined, start the game!
     if (self.host.numPlayersInRoom === 2) {
       // console.log('Room is full. Almost ready!');
-      // Let the server know that four players are present.
-      socket.emit('hostRoomFull', self.App.gameId);
+      // Let the server know that x players are present.
+      socket.emit('hostRoomFull', self.gameSetup.gameId);
     }
   }
   //
   function updatePlayerWaitingScreen(data) {
     if(socket.id === data.mySocketId){
-      self.App.myRole = 'Player';
-      self.App.gameId = data.gameId;
+      self.gameSetup.myRole = 'Player';
+      self.gameSetup.gameId = data.gameId;
       $('#playerWaitingMessage').append('<p>Joined Game ' + data.gameId + '. Waiting on other players... Please wait for the game to begin.</p>');
     }
   }
-  //
+
+  //************************//
+  //                        //
+  //    GAME START VIEWS    //
+  //                        //
+  //************************//
 
   function beginNewGame(data) {
-    changeHostView();
-    changePlayerView();
-    // App[App.myRole].gameCountdown(data);
+    console.log('data in begin new game', data);
+    socket.emit('changeHostView', self.host.hostSocketId)
+    //loop through player sockets to find player socket ID information.
+    for (var i = 0; i < self.host.players.length; i++) {
+      socketId = self.host.players[i].mySocketId;
+      socket.emit('changePlayerView', socketId)
+    }
+    console.log('players at begin new game', self.host.players);
   }
 
-  function changeHostView(){
-
+  function onChangeHostView(){
+    console.log('made it to change Host View');
+    console.log('in change view', self.gameSetup.myRole);
+    $scope.$apply(hostGameTemplate());
+    console.log('is template true?', self.hostGameTemplate);
   }
+
+  function onChangePlayerView(){
+    console.log('made it to change Host View');
+    console.log('in change view', self.gameSetup.myRole);
+    $scope.$apply(playerGameTemplate());
+    console.log('is template true?', self.hostGameTemplate);
+  }
+
+  function hostGameTemplate(){
+    self.hostGameTemplate = true;
+    self.gameSetup.isStarted
+  }
+
+  function playerGameTemplate(){
+    self.playerGameTemplate = true;
+    self.playerJoining = false;
+  }
+
 
 }]);

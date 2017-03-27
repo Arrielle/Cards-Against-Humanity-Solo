@@ -1,45 +1,44 @@
 <!--
 //*********************//
-//    HOME TEMPLATE    //
+//    HOME TEMPLATE    //    || This is the view when someone first comes to the site.
 //*********************//
 -->
-<!-- <div ng-hide="hc.App.isStarted || hc.playerJoining"> -->
-<div class = "padding">
-<button ng-click="hc.onCreateClick()" type="button" name="button">Create a New Game</button>
-<button ng-click="hc.playerJoinView()" type="button" name="button">Join a Game</button>
+<div ng-hide="hc.gameSetup.isStarted || hc.playerJoining || hc.playerGameTemplate || hc.hostGameTemplate">
+  <div class = "padding">
+    <button ng-click="hc.onCreateClick()" type="button" name="button">Create a New Game</button>
+    <button ng-click="hc.playerJoinView()" type="button" name="button">Join a Game</button>
+  </div>
 </div>
-<!-- <div> -->
 
 <!--
 //***************************//
-//   PLAYER JOIN TEMPLATE    //
+//   PLAYER JOIN TEMPLATE    //    || This is the view when someone clicks Join a Game
 //***************************//
- -->
-
+-->
 <div ng-show ="hc.playerJoining">
-  <input id="inputPlayerName" type="text" name="" placeholder="Player Name" value=""/>
-  <input id="inputGameId" type="text" name="" placeholder="Game ID" value=""/><br>
+  <input ng-model="hc.playerName" type="text" name="" placeholder="Player Name" value=""/>
+  <input ng-model="hc.gameId" type="text" name="" placeholder="Game ID" value=""/><br>
   <button ng-click="hc.onPlayerStartClick()" type="button" name="button">Click Start</button>
   <!-- This is where I'll alert the player that they are waiting for more people before they can start the game -->
   <div id="playerWaitingMessage"></div>
 </div>
 <!--
 //*****************************//
-//   PLAYER IN GAME TEMPLATE   //
+//   PLAYER IN GAME TEMPLATE   //    || This is the player view when game starts.
 //*****************************//
- -->
+-->
 <div ng-show="hc.playerGameTemplate">
   <h1>This is the players View</h1>
 </div>
 
 <!--
 //*******************************//
-//   GAME INITIALIZE TEMPLATE    //
+//   GAME INITIALIZE TEMPLATE    //    || This is view when Create Game is clicked.
 //*******************************//
 -->
-<div ng-show="hc.App.isStarted">
+<div ng-show="hc.gameSetup.isStarted && !hc.hostGameTemplate">
   <h2>Open this site on your mobile device {{hc.link}}</h2>
-  <h2>Here is your game ID: {{hc.App.gameId}}</h2>
+  <h2>Here is your game ID: {{hc.gameSetup.gameId}}</h2>
   <!-- Below is where I'll show who has joined the room -->
   <!-- Consider using angular to ng-repeat through players in room. Currently using Jquery  -->
   <div id="playersWaiting"></div>
@@ -47,48 +46,48 @@
 
 <!--
 //***************************//
-//   HOST IN GAME TEMPLATE   //
+//   HOST IN GAME TEMPLATE   //    || This is the host view when game starts.
 //***************************//
- -->
+-->
 <!-- Player Scores -->
 <div ng-show="hc.hostGameTemplate" class = "row">
-<div id = "playerScores">
-  <div class = "col-xs-3 row">
-    <div class = "col-xs-6 col-md-3">
-      <img class = "img-responsive" src="../images/126486.png" alt="">
+  <div id = "playerScores">
+    <div class = "col-xs-3 row">
+      <div class = "col-xs-6 col-md-3">
+        <img class = "img-responsive" src="../images/126486.png" alt="">
+      </div>
+      <div class = "col-xs-6 col-md-9">
+        <h4>Arrielle</h4>
+        <h5>Score: 0</h5>
+      </div>
     </div>
-    <div class = "col-xs-6 col-md-9">
-      <h4>Arrielle</h4>
-      <h5>Score: 0</h5>
+    <div class = "col-xs-3 row">
+      <div class = "col-xs-6 col-md-3">
+        <img class = "img-responsive" src="../images/126486.png" alt="">
+      </div>
+      <div class = "col-xs-6 col-md-9">
+        <h4>Jordan</h4>
+        <h5>Score: 0</h5>
+      </div>
+    </div>
+    <div class = "col-xs-3 row">
+      <div class = "col-xs-6 col-md-3">
+        <img class = "img-responsive" src="../images/126486.png" alt="">
+      </div>
+      <div class = "col-xs-6 col-md-9">
+        <h4>Phish</h4>
+        <h5>Score: 0</h5>
+      </div>
+    </div>
+    <div class = "col-xs-3 row">
+      <div class = "col-xs-6 col-md-3">
+        <img class = "img-responsive" src="../images/126486.png" alt="">
+      </div>
+      <div class = "col-xs-6 col-md-9">
+        <h4>Drew</h4>
+        <h5>Score: 0</h5>
+      </div>
     </div>
   </div>
-  <div class = "col-xs-3 row">
-    <div class = "col-xs-6 col-md-3">
-      <img class = "img-responsive" src="../images/126486.png" alt="">
-    </div>
-    <div class = "col-xs-6 col-md-9">
-      <h4>Jordan</h4>
-      <h5>Score: 0</h5>
-    </div>
-  </div>
-  <div class = "col-xs-3 row">
-    <div class = "col-xs-6 col-md-3">
-      <img class = "img-responsive" src="../images/126486.png" alt="">
-    </div>
-    <div class = "col-xs-6 col-md-9">
-      <h4>Phish</h4>
-      <h5>Score: 0</h5>
-    </div>
-  </div>
-  <div class = "col-xs-3 row">
-    <div class = "col-xs-6 col-md-3">
-      <img class = "img-responsive" src="../images/126486.png" alt="">
-    </div>
-    <div class = "col-xs-6 col-md-9">
-      <h4>Drew</h4>
-      <h5>Score: 0</h5>
-    </div>
-  </div>
-</div>
-<!-- THIS IS WHERE THE GAME VIEW NEEDS TO GO. BLACK CARDS, WHITE CARDS PLAYED -->
+  <!-- THIS IS WHERE THE GAME VIEW NEEDS TO GO. BLACK CARDS, WHITE CARDS PLAYED -->
 </div>
