@@ -22,3 +22,131 @@ form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 
 #messages { list-style-type: none; margin: 0; padding: 0; }
 #messages li { padding: 5px 10px; }
 #messages li:nth-child(odd) { background: #eee; }
+
+#title{
+  font-size: 50px;
+}
+
+#container{
+  padding: 20px;
+  margin-left: 10%;
+  margin-right: 10%;
+  /*padding-top: 60px;*/
+}
+
+.container{
+  padding-top: 50px;
+}
+
+#playerView{
+ margin-top: 50px;
+}
+
+#header {
+  border-color: 1px solid white;
+}
+
+#activeBlackCard {
+  height: 224px;
+  width: 160px;
+  padding: 10px;
+  font-weight: bold;
+  background-color: black;
+  color: white;
+  margin: 10px;
+  display: inline-block;
+  border-radius: 10px;
+  box-shadow: 0 0 20px grey;
+  padding: 20px;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+#czarChoiceView {
+  height: 224px;
+  width: 160px;
+  padding: 10px;
+  font-weight: bold;
+  background-color: black;
+  color: white;
+  margin: 10px;
+  display: inline-block;
+  border-radius: 10px;
+  box-shadow: 0 0 20px grey;
+  padding: 20px;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.czarChoice {
+  height: 146px;
+  width: 320px;
+  margin-bottom: 5px;
+  font-weight: bold;
+  background-color: white;
+  color: black;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 20px grey;
+  /*margin-top: auto;*/
+  font-size: 28px;
+}
+
+.card {
+  height: 224px;
+  width: 160px;
+  padding: 20px;
+  font-weight: bold;
+  background-color: white;
+  margin: -5px;
+  display: inline-block;
+  vertical-align: middle;
+  border-radius: 10px;
+  box-shadow: 0 0 20px grey;
+  margin-top: auto;
+}
+
+.card:hover{
+  transform: translate(0, -5px);
+}
+
+.selectedCard {
+  background-color: #90DB86;
+  transform: translate(0, -5px);
+
+}
+input {
+  height: 45px;
+  width: 200px;
+}
+
+button {
+  margin-left: 30px;
+  padding: 10px;
+  width: 160px;
+  background-color: white;
+  font-weight: bold;
+  border: 1px solid black;
+}
+
+button:hover{
+  margin-left: 30px;
+  padding: 10px;
+  width: 160px;
+  background-color: black;
+  font-weight: bold;
+  color: white;
+  border: 1px solid white;
+}
+
+button:active{
+  margin-left: 50px;
+  padding: 10px;
+  width: 160px;
+  background-color: black;
+  font-weight: bold;
+  color: white;
+  border: 1px solid white;
+  transform: translate(0, 5px);
+
+}

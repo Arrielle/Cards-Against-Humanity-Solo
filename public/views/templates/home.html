@@ -28,7 +28,9 @@
 //*****************************//
 -->
 <div ng-show="hc.playerGameTemplate">
-  <h1>This is the players View</h1>
+  <h1>This is the players View</h1>  <div id = "container">
+
+  </div>
 </div>
 
 <!--
@@ -49,45 +51,26 @@
 //   HOST IN GAME TEMPLATE   //    || This is the host view when game starts.
 //***************************//
 -->
-<!-- Player Scores -->
+
+
+<!-- Player Scores - Needs to Change into an NG-REPEAT-->
 <div ng-show="hc.hostGameTemplate" class = "row">
-  <div id = "playerScores">
+  <div id = "playerScores" ng-repeat="player in hc.host.players">
     <div class = "col-xs-3 row">
       <div class = "col-xs-6 col-md-3">
         <img class = "img-responsive" src="../images/126486.png" alt="">
       </div>
       <div class = "col-xs-6 col-md-9">
-        <h4>Arrielle</h4>
-        <h5>Score: 0</h5>
-      </div>
-    </div>
-    <div class = "col-xs-3 row">
-      <div class = "col-xs-6 col-md-3">
-        <img class = "img-responsive" src="../images/126486.png" alt="">
-      </div>
-      <div class = "col-xs-6 col-md-9">
-        <h4>Jordan</h4>
-        <h5>Score: 0</h5>
-      </div>
-    </div>
-    <div class = "col-xs-3 row">
-      <div class = "col-xs-6 col-md-3">
-        <img class = "img-responsive" src="../images/126486.png" alt="">
-      </div>
-      <div class = "col-xs-6 col-md-9">
-        <h4>Phish</h4>
-        <h5>Score: 0</h5>
-      </div>
-    </div>
-    <div class = "col-xs-3 row">
-      <div class = "col-xs-6 col-md-3">
-        <img class = "img-responsive" src="../images/126486.png" alt="">
-      </div>
-      <div class = "col-xs-6 col-md-9">
-        <h4>Drew</h4>
-        <h5>Score: 0</h5>
+        <h4>{{player.playerName}}</h4>
+        <h5>{{player.playerScore}}</h5>
       </div>
     </div>
   </div>
-  <!-- THIS IS WHERE THE GAME VIEW NEEDS TO GO. BLACK CARDS, WHITE CARDS PLAYED -->
+  <br>
+  <div class ="row">
+    <div id = "activeBlackCard" ng-hide="hc.gameSetup.isOver" ng-model="hc.host.currentBlackCard.text" class ="col-md-12">
+      <!-- {{hc.host.currentBlackCard.text}} -->
+      <p>Here is where the black card text will go when I get the database up and running.</p>
+    </div>
+  </div>
 </div>

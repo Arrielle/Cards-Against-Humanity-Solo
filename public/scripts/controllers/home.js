@@ -1,4 +1,4 @@
-myApp.controller('HomeController', ['$scope', function($scope) {
+myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   console.log('home controller running');
   var self = this;
   var socket = io();
@@ -40,6 +40,7 @@ myApp.controller('HomeController', ['$scope', function($scope) {
     //to the array of winnign black cards stored on the server.
     currentRound: 0,
     isStarted: false,
+    isOver: false
   }
 
   self.host = {
@@ -104,7 +105,8 @@ myApp.controller('HomeController', ['$scope', function($scope) {
     var data = {
       gameId : self.gameId,
       playerName : self.playerName,
-      numPlayersInRoom : self.host.numPlayersInRoom,
+      playerScore: 0,
+      // numPlayersInRoom : self.host.numPlayersInRoom,
     };
     socket.emit('playerJoinGame', data);
   }
@@ -153,28 +155,23 @@ myApp.controller('HomeController', ['$scope', function($scope) {
   //************************//
 
   function beginNewGame(data) {
-    console.log('data in begin new game', data);
     socket.emit('changeHostView', self.host.hostSocketId)
-    //loop through player sockets to find player socket ID information.
+    //loop through player sockets to find player socket ID information, and update their view specifically
     for (var i = 0; i < self.host.players.length; i++) {
       socketId = self.host.players[i].mySocketId;
       socket.emit('changePlayerView', socketId)
     }
-    console.log('players at begin new game', self.host.players);
   }
 
   function onChangeHostView(){
-    console.log('made it to change Host View');
-    console.log('in change view', self.gameSetup.myRole);
+    //changes the hosts view
+    postNewGameToDatabase(self.gameSetup.gameId);
     $scope.$apply(hostGameTemplate());
-    console.log('is template true?', self.hostGameTemplate);
   }
 
   function onChangePlayerView(){
-    console.log('made it to change Host View');
-    console.log('in change view', self.gameSetup.myRole);
+    //changes the players view
     $scope.$apply(playerGameTemplate());
-    console.log('is template true?', self.hostGameTemplate);
   }
 
   function hostGameTemplate(){
@@ -187,5 +184,26 @@ myApp.controller('HomeController', ['$scope', function($scope) {
     self.playerJoining = false;
   }
 
+  //**********************************************************//
+  //                                                          //
+  //                     GAME LOGIC START                     //
+  //                                                          //
+  //**********************************************************//
+
+  //POST NEW GAME TO DATABASE
+  //DRAW CARDS FOR PLAYERS
+  //DRAW BLACK CARDS
+
+  function postNewGameToDatabase(inGameId){
+    gameIdObject = {gameId: inGameId};
+    $http({
+      method: 'POST',
+      url: '/game/newGame',
+      data: gameIdObject
+    }).then(function(response){
+      console.log('sent game to the database.');
+    });
+
+  }
 
 }]);
