@@ -8,16 +8,20 @@
 <button ng-click="hc.playerJoinView()" type="button" name="button">Join a Game</button>
 <!-- <div> -->
 
-<!-- GAME INITIALIZE TEMPLATE -->
+<!-- GAME INITIALIZE TEMPLATE | HOST -->
 <div ng-show="hc.App.isStarted">
 <h2>Open this site on your mobile device {{hc.link}}</h2>
 <h2>Here is your game ID: {{hc.App.gameId}}</h2>
 <h2>Here is your socket ID: {{hc.App.mySocketId}}</h2>
+<!-- This is where I'll show who has joined the room -->
+<div id="playersWaiting"></div>
 </div>
 
-<!-- PLAYER JOIN TEMPLATE -->
+<!-- PLAYER JOIN TEMPLATE | PLAYER-->
 <div ng-show ="hc.playerJoining">
 <input id="inputPlayerName" type="text" name="" placeholder="Player Name" value=""/>
 <input id="inputGameId" type="text" name="" placeholder="Game ID" value=""/><br>
 <button ng-click="hc.onPlayerStartClick()" type="button" name="button">Click Start</button>
+<!-- This is where I'll alert the player that they are waiting for more people before they can start the game -->
+<div id="playerWaitingMessage"></div>
 </div>
