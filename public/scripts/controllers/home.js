@@ -201,9 +201,43 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       url: '/game/newGame',
       data: gameIdObject
     }).then(function(response){
+      databaseId = response.data[0].id;
+      console.log(databaseId);
       console.log('sent game to the database.');
+      drawBlackCard(databaseId);
     });
+  }
 
+  //~.:------------>DRAW A BLACK CARD<------------:.~//
+
+  self.databaseId = 0;
+
+  function drawBlackCard(databaseId){
+    self.databaseId = databaseId;
+    // console.log('databaseid', self.databaseId);
+    objectToSend = {gameId: databaseId};
+    $http({
+      method: 'POST',
+      url: '/allBlackCards',
+      data: objectToSend
+    }).then(function(response){
+      var blackCard = response.data[0]; //this is the black card that was drawn
+      self.host.currentBlackCard = blackCard;
+      // self.round.cardsToPick = blackCard.pick;
+      var blackCardId = response.data[0].id;
+      console.log('blackCardId', blackCardId, 'databaseId', self.databaseId);
+      removeBlackCardFromDeck(blackCardId, databaseId);
+    });
+  }
+
+  function removeBlackCardFromDeck(cardId, databaseId){
+    var blackCardObject = {gameId: databaseId, cardId: cardId };
+    $http({
+      method: 'POST',
+      url: '/postBlackCards',
+      data: blackCardObject
+    }).then(function(response){
+    });
   }
 
 }]);

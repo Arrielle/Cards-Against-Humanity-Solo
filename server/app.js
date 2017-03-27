@@ -11,6 +11,8 @@ var favicon = require('serve-favicon')
 // Routes/Modules
 var cah = require('./routes/gamelogic');
 var game = require('./routes/game');
+var blackcards = require('./routes/blackcards');
+
 
 
 // Serve index file
@@ -32,6 +34,8 @@ io.sockets.on('connection', function (socket) {
 
 //Sever Modules
 app.use('/game', game);
+app.use('/', blackcards);
+
 
 // Spin up server
 http.listen(port, function(){
