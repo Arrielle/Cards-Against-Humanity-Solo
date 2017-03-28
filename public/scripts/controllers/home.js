@@ -95,7 +95,8 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //                   //
   //*******************//
   self.gameId = null;
-  self.playerName = null
+  self.playerName = null;
+
 
   function error(data) {
     console.log('error?', data);
@@ -104,6 +105,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
 
   //player has clicked start
   self.onPlayerStartClick = function () {
+
     // collect data to send to the server
     var data = {
       gameId : self.gameId,
@@ -118,7 +120,6 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
 
   //When a player clicks Join a Game the Join Game view is displayed.
   self.playerJoinView = function(){
-    console.log(self.host.players);
     self.playerJoining = true;
   }
 
@@ -131,7 +132,6 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     // Update host screen - switch to angular
     $('#playersWaiting').append('<p/>Player ' + data.playerName + ' joined the game.</p>');
     $('#playerWaitingMessage').append('<p>Joined Game ' + data.gameId + '. Waiting on other players... Please wait for the game to begin.</p>');
-
     // Store the new player's data on the Host.
     self.host.players.push(data);
     // Increment the number of players in the room
@@ -164,6 +164,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     //loop through player sockets to find player socket ID information, and update their view specifically
     for (var i = 0; i < self.host.players.length; i++) {
       socketId = self.host.players[i].mySocketId;
+      // name = self.host.players[i].playerName;
       socket.emit('changePlayerView', socketId);
     }
   }
@@ -208,7 +209,6 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       drawBlackCard(databaseId);
       drawCards();
       setCzar();
-      console.log('self.host.players', self.host.players);
     });
   }
 
@@ -256,10 +256,6 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //~.:------------>DRAW WHITE CARDS AT RANDOM<------------:.~//
   function drawCards(){ //Give this function the player array
     objectToSend = {gameId: self.databaseId}; //I need to send the database ID
-    console.log('database id at drawCards', self.databaseId);
-    console.log('players cards', self.host.players[0].currentCards);
-    console.log('players', self.host.players);
-
     $http({
       method: 'POST',
       url: '/allWhiteCards',
@@ -278,6 +274,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   }
   //~.:------------>ADD CARDS TO THE PLAYER OBJECT<------------:.~//
   function addCardsToHand(numberCardsToDraw, deck, player) {
+    var playerName = player.playerName;
     for (i = 0; i < numberCardsToDraw; i++) {
       var whiteIndex = Math.floor(Math.random() * deck.length); //selects a white card from the deck at random
       player.cardsInHand.push(deck[whiteIndex]); //pushes the random card into the players hand
@@ -329,7 +326,6 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     var numberOfSelectedCards = checkCardsInHand(playerCards);
     var cardsToPick = self.gameSetup.cardsToPick;  //finds out what the current rounds 'number of cards to pick' is set to
     if (numberOfSelectedCards == cardsToPick) {
-      console.log('this is where you can send cards');
       // nextPlayer(player); //sends white cards, and sets the next player.
       whiteCardsToSend(playerCards);
     }
@@ -348,7 +344,6 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
 
 //~.:------------>TIES PLAYER TO CARD THAT WAS SENT<------------:.~//
 function whiteCardsToSend(playerCards){
-
   // var playerName = player.playerName;
   for (var i = 0; i < playerCards.length; i++) { //loops through the players cards
     // playerCards[i].playerName = playerName; //this ties the player to the card that was sent.
@@ -383,8 +378,6 @@ function shuffleArray(array) {
 //~.:------------>SETS THE CURRENT CZAR<------------:.~//
 //hard coded who czar is... NEED TO MAKE DYNAMIC
 function setCzar(){
-  console.log('set czar', self.host.players);
-  console.log('is Czar?', self.host.players[0].isCzar);
   player = self.host.players
   if (player[0].isCzar){
     player[0].isCzar = false;
@@ -409,7 +402,6 @@ function setCzar(){
 }
 //~.:------------>CHANGES THE CZAR VIEW<------------:.~//
 function czarView(){
-  console.log('czar view');
   $scope.$apply(showCzar());
 }
 
