@@ -14,6 +14,7 @@ exports.initGame = function(sio, socket){
   gameSocket.on('findPlayersCards', findPlayersCards);
   gameSocket.on('setCzar', setCzar);
   gameSocket.on('cardsToJudge', cardsToJudge);
+  gameSocket.on('playerHideButton', changePlayerStatus)
   // gameSocket.on('hostCountdownFinished', hostStartGame);
   // gameSocket.on('hostNextRound', hostNextRound);
 
@@ -110,7 +111,8 @@ function findPlayersCards(playersObject){
     var name = playersObject[i].playerName
     console.log('playerObject[i]', playersObject[i]);
     //emit these cards specifically to this player
-    io.to(playerSocketId).emit('dealWhiteCards', {playerCards: cards, playerName: name});
+    io.to(playerSocketId).emit('dealWhiteCards', {playersObject: playersObject[i]});
+    // io.to(playerSocketId).emit('dealWhiteCards', {playerCards: cards, playerName: name, playersObject: playersObject[i]});
   }
 }
 
@@ -131,4 +133,8 @@ function cardsToJudge(data){
   var cardsToJudge = data.cardsToJudge;
   var gameId = data.players[0].gameId;
   io.sockets.in(gameId).emit('czarCards', cardsToJudge);
+}
+
+function changePlayerStatus(data){
+  io.to(data.mySocketId).emit('updatePlayerView', data);
 }

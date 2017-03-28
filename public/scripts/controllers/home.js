@@ -20,6 +20,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   socket.on('dealWhiteCards', dealWhiteCards);
   socket.on('showCzarView', czarView);
   socket.on('czarCards', updateCzarView);
+  socket.on('updatePlayerView', updatePlayerView);
 
   //*************************//
   //                         //
@@ -50,10 +51,13 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     numPlayersInRoom: 0,
     hostSocketId: null,
     isNewGame: false,
+    isOver: false,
     players: [],
     currentBlackCard: null,
     currentRound: 0,
     cardsToJudge: [],
+    pointsToWin: 2,
+    winner: null,
   }
 
   //*******************************//
@@ -299,8 +303,10 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     $scope.$apply(showCardsOnDom(data));
   }
 
-  function showCardsOnDom(cardArray){
-    self.playerCardsInHand = cardArray;
+  function showCardsOnDom(data){
+    self.playerObject = data;
+    console.log('playerObject?', data);
+    console.log('cards?', data.playersObject.cardsInHand);
   }
 
   //***********************************//
@@ -310,7 +316,25 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //***********************************//
 
   //~.:------------>SELECT CARD CSS CHANGES<------------:.~//
-  self.selectCard = function(card, cardsInHand){
+  self.selectCard = function(card, cardsInHand, playerName, playerObject){
+    card.selected = true; //gives the card that was selected a property of 'selected' and sets it to true.
+    card.playerName = playerName;
+    playerObject.hasPlayed = true; //need to update the view based on this...
+    console.log('WHATCHUFINNADO', playerObject);
+    var cardsToPick = self.gameSetup.cardsToPick;  //finds out what the current rounds 'number of cards to pick' is set to
+    var numberOfSelectedCards = checkCardsInHand(cardsInHand);  //Checks to see if the correct number of cards has been chosen
+    if (numberOfSelectedCards > cardsToPick){ //if the number of cards selected is > cards to pick, it removes the .selected from all cards in the array.
+      for (var i = 0; i < cardsInHand.length; i++) {
+        cardsInHand[i].selected = false;
+      }
+      card.playerName = playerName;
+      card.selected = true; //sets the card that was last clicked as the selected card. (it was removed by my previous if)
+    }
+  }
+
+  //~.:------------>SELECT CARD CSS CHANGES WHEN CZAR SELECTING<------------:.~//
+  self.selectCardCzar = function(card, cardsInHand){
+    console.log('cards in hand', cardsInHand);
     card.selected = true; //gives the card that was selected a property of 'selected' and sets it to true.
     var cardsToPick = self.gameSetup.cardsToPick;  //finds out what the current rounds 'number of cards to pick' is set to
     var numberOfSelectedCards = checkCardsInHand(cardsInHand);  //Checks to see if the correct number of cards has been chosen
@@ -323,7 +347,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   }
 
   //~.:------------>SEND CARDS TO CZAR<------------:.~//
-  self.sendCardsToCzar = function(playerCards){
+  self.sendCardsToCzar = function(playerCards, playerObject){
     var numberOfSelectedCards = checkCardsInHand(playerCards);
     var cardsToPick = self.gameSetup.cardsToPick;  //finds out what the current rounds 'number of cards to pick' is set to
     if (numberOfSelectedCards == cardsToPick) {
@@ -331,6 +355,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       whiteCardsToSend(playerCards);
       console.log('cards to judge???', self.host.cardsToJudge);
       socket.emit('cardsToJudge', self.host);
+      socket.emit('playerHideButton', playerObject);
     }
   }
 
@@ -347,13 +372,10 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
 
 //~.:------------>TIES PLAYER TO CARD THAT WAS SENT<------------:.~//
 function whiteCardsToSend(playerCards){
-  // var playerName = player.playerName;
   for (var i = 0; i < playerCards.length; i++) { //loops through the players cards
-    // playerCards[i].playerName = playerName; //this ties the player to the card that was sent.
     if(playerCards[i].selected){ //finds the ones that have been selected
       self.host.cardsToJudge.push(playerCards[i]); //adds the card to the cards to judge array.
       playerCards.splice(i, 1);
-      // playerCards[i] = {removeMe: i}; //sets that card to null.
       for (var i = 0; i < self.host.cardsToJudge.length; i++) {//changes all cards in the array from selected to unselected.
         self.host.cardsToJudge[i].selected = false;
       }//ends for
@@ -373,6 +395,16 @@ function shuffleArray(array) {
   }
   return array;
 }
+
+//loop through self.host.cardsToJudge and find the username of people who have sent cardsToJudge
+
+// function checkIfPlayed(){
+//   for (var i = 0; i < self.host.cardsToJudge.length; i++) {
+//     var playerName = self.host.cardsToJudge[i].playerName
+//     socket.emit('checkIfPlayed', playerName);
+//   }
+// }
+
 //**********************//
 //                      //
 //    CZAR FUNCTIONS    //
@@ -426,6 +458,15 @@ function cardsToJudgeUpdateView(data){
   self.host.cardsToJudge = data;
 }
 
+function updatePlayerView(data){
+  $scope.$apply(playerHasPlayed(data));
+}
+
+function playerHasPlayed(data){
+  console.log('HERE IS SOME AMAZING DATA', data);
+  self.playerDone = true;
+}
+
 //Sets all players isCzar to false
 function noCzar(){
   //makes view false (can I get rid of this?)
@@ -436,14 +477,68 @@ function noCzar(){
   }
 }
 
-//host view needs to reflect who the Czar is.
+//***************************//
+//                           //
+//    SELECT ROUND WINNER    //
+//                           //
+//***************************//
 
-//select the CZAR player
-//send cards to czar
+self.selectRoundWinner = function(){
+  console.log('!!cards to judge?', self.host.cardsToJudge);
+  // // go through the array of cards and make sure that one of them is selected
+  for (var i = 0; i < self.host.cardsToJudge.length; i++) {
+    if(self.host.cardsToJudge[i].selected){
+      setRoundWinner(); //finds who won the round and awards them points
+      //ALERT USERS WHO WON... THEN RESET EVERYTHING
+      checkIfGameOver(); //checks to see if anyone has 10 points yet
+  //     newRound(); //sets up for a new round
+  //     drawBlackCard(); //draws a new black card
+  //     drawCards(self.playerArray); // draws white cards
+  //     setCzar(); //needs to set current czar to nothing and then set the next czar
+  //     UPDATE ALL VIEWS
+    }
+  }
+}
+
+function setRoundWinner(){
+  //loops through the array of cards to judge
+  for (var i = 0; i < self.host.cardsToJudge.length; i++) { //loop through cards to judge
+    //if the card is selected, it's the winner
+    if(self.host.cardsToJudge[i].selected){ //find the card in the array that is selected
+      //find the player who sent the card and give them points.
+      var winner = self.host.cardsToJudge[i].playerName; //find the user who sent that card, and set them to winner.
+      console.log('winners name', winner);
+      for (var i = 0; i < self.host.players.length; i++) { //loop through the player array
+        if(self.host.players[i].playerName == winner){ //whichever player is the winner
+          self.host.players[i].playerScore++; //gets a point
+        }//ends if
+      }//ends for
+    }//ends if
+  }//ends for
+}//ends function
+
+function checkIfGameOver(){
+  for (var i = 0; i < self.host.players.length; i++) {
+    if (self.host.players[i].points >= self.host.pointsToWin){
+      self.host.winner = self.host.players[i].playerName;
+      self.host.isOver = true;
+    }
+  }
+  if(self.host.isOver){
+  for (var i = 0; i < self.host.players.length; i++) {
+    self.host.players[i].isCzar = false;
+    console.log('THE GAME IS OVER!');
+  }
+  }
+  console.log('GAME IS NOT OVER');
+}
+
+//host view needs to reflect who the Czar is.
 //check if all players have played their cards
 //if they have, it's time for czar to select a winner
 //award points
 //check if game winner
+//reset important round information.
 //select the next czar
 //draw white cards
 //draw black card
