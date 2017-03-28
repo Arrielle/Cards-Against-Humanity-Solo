@@ -44,7 +44,7 @@ function hostPrepareGame(gameId) {
         gameId : gameId
     };
     console.log('host prep data', data);
-    // console.log("All Players Present. Preparing game...");
+    console.log("All Players Present. Preparing game...");
     io.sockets.in(data.gameId).emit('beginNewGame', data);
 }
 

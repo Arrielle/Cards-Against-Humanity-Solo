@@ -119,34 +119,34 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
 
   function playerJoinedRoom(data) {
     // When a player joins a room, do the updateWaitingScreen funciton.
-    // There are two versions of this function: one for the 'host' and
-    // another for the 'player'.
-    updatePlayerWaitingScreen(data);
     updateWaitingScreen(data);
   }
   //
   function updateWaitingScreen(data) {
-    // Update host screen
+    // Update host screen - switch to angular
     $('#playersWaiting').append('<p/>Player ' + data.playerName + ' joined the game.</p>');
+    $('#playerWaitingMessage').append('<p>Joined Game ' + data.gameId + '. Waiting on other players... Please wait for the game to begin.</p>');
+
     // Store the new player's data on the Host.
     self.host.players.push(data);
     // Increment the number of players in the room
     self.host.numPlayersInRoom += 1;
     // If x players have joined, start the game!
     if (self.host.numPlayersInRoom === 2) {
-      // console.log('Room is full. Almost ready!');
+      console.log('Room is full. Initilizing hostRoomFull!');
       // Let the server know that x players are present.
       socket.emit('hostRoomFull', self.gameSetup.gameId);
     }
   }
   //
-  function updatePlayerWaitingScreen(data) {
-    if(socket.id === data.mySocketId){
-      self.gameSetup.myRole = 'Player';
-      self.gameSetup.gameId = data.gameId;
-      $('#playerWaitingMessage').append('<p>Joined Game ' + data.gameId + '. Waiting on other players... Please wait for the game to begin.</p>');
-    }
-  }
+  // function updatePlayerWaitingScreen(data) {
+  //   console.log('what is this data?', data);
+  //   if(socket.id === data.mySocketId){
+  //     self.gameSetup.myRole = 'Player';
+  //     self.gameSetup.gameId = data.gameId;
+  // $('#playerWaitingMessage').append('<p>Joined Game ' + data.gameId + '. Waiting on other players... Please wait for the game to begin.</p>');
+  //   }
+  // }
 
   //************************//
   //                        //
