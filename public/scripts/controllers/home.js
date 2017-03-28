@@ -108,6 +108,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       playerName : self.playerName,
       playerScore: 0,
       cardsInHand: [],
+      isCzar: false
       // numPlayersInRoom : self.host.numPlayersInRoom,
     };
     socket.emit('playerJoinGame', data);
@@ -204,6 +205,8 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       //Draw a black card. A black card that has been drawn, cannot be drawn again.
       drawBlackCard(databaseId);
       drawCards();
+      setCzar();
+      console.log('self.host.players', self.host.players);
     });
   }
 
@@ -368,8 +371,42 @@ function shuffleArray(array) {
   }
   return array;
 }
+//**********************//
+//                      //
+//    CZAR FUNCTIONS    //
+//                      //
+//**********************//
 
-//select a czar
+//hard coded who czar is... NEED TO MAKE DYNAMIC
+function setCzar(){
+  console.log('set czar', self.host.players);
+  console.log('is Czar?', self.host.players[0].isCzar);
+  player = self.host.players
+  if (player[0].isCzar){
+    player[0].isCzar = false;
+    player[1].isCzar = true;
+  } else if (player[1].isCzar){
+    player[1].isCzar = false;
+    // player[2].isCzar = true;
+    player[0].isCzar = true;
+  }
+  // else if (player[2].isCzar){
+  //   player[2].isCzar = false;
+  //   player[3].isCzar = true;
+  // }else if (player[3].isCzar){
+  //   player[3].isCzar = false;
+  //   player[0].isCzar = true;
+  // }
+  else {
+    player[0].isCzar = true;
+  }
+  console.log(player);
+}
+
+//player view needs to change based on who the Czar is.
+//host view needs to reflect who the Czar is.
+
+//select the CZAR player
 //send cards to czar
 //check if all players have played their cards
 //if they have, it's time for czar to select a winner
