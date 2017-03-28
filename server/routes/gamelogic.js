@@ -12,6 +12,7 @@ exports.initGame = function(sio, socket){
   gameSocket.on('changeHostView', changeHostView);
   gameSocket.on('changePlayerView', changePlayerView);
   gameSocket.on('findPlayersCards', findPlayersCards);
+  gameSocket.on('setCzar', setCzar);
   // gameSocket.on('hostCountdownFinished', hostStartGame);
   // gameSocket.on('hostNextRound', hostNextRound);
 
@@ -104,7 +105,23 @@ function findPlayersCards(playersObject){
     var cards = playersObject[i].cardsInHand;
     //'this' players socketId
     var playerSocketId = playersObject[i].mySocketId;
+    //'this' players playerName
+    var name = playersObject[i].playerName
+    console.log('playerObject[i]', playersObject[i]);
     //emit these cards specifically to this player
-    io.to(playerSocketId).emit('dealWhiteCards', {playerCards: cards});
+    io.to(playerSocketId).emit('dealWhiteCards', {playerCards: cards, playerName: name});
+  }
+}
+
+function setCzar(playersObject){
+  for (var i = 0; i < playersObject.length; i++) {
+    //sets all czar to false.
+    this.emit('setCzarToFalse');
+    //this player is czar let them know.
+    if(playersObject[i].isCzar){
+      var playerSocketId = playersObject[i].mySocketId;
+      io.to(playerSocketId).emit('showCzarView');
+      //also alert host who the czar is.
+    }
   }
 }

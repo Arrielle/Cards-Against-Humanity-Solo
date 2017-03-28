@@ -18,6 +18,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   socket.on('changeHostView', onChangeHostView);
   socket.on('changePlayerView', onChangePlayerView);
   socket.on('dealWhiteCards', dealWhiteCards);
+  socket.on('showCzarView', czarView);
 
   //*************************//
   //                         //
@@ -51,6 +52,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     players: [],
     currentBlackCard: null,
     currentRound: 0,
+    cardsToJudge: [],
   }
 
   //*******************************//
@@ -322,6 +324,17 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     }
   }
 
+  //~.:------------>SEND CARDS TO CZAR<------------:.~//
+  self.sendCardsToCzar = function(playerCards){
+    var numberOfSelectedCards = checkCardsInHand(playerCards);
+    var cardsToPick = self.gameSetup.cardsToPick;  //finds out what the current rounds 'number of cards to pick' is set to
+    if (numberOfSelectedCards == cardsToPick) {
+      console.log('this is where you can send cards');
+      // nextPlayer(player); //sends white cards, and sets the next player.
+      whiteCardsToSend(playerCards);
+    }
+  }
+
   //~.:------------>DETERMINES HOW MANY CARDS A PLAYER HAS SELECTED TO SEND TO THE CZAR<------------:.~//
   function checkCardsInHand(cardsInHand){
     var numberOfSelectedCards = 0; //initialized numberOfSelctedCards to 0
@@ -333,32 +346,23 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   return numberOfSelectedCards;
 }
 
-//~.:------------>SEND CARDS TO CZAR<------------:.~//
-self.sendCardsToCzar = function(player){
-  var cardsInHand = player.currentCards; //finds the players cards
-  var numberOfSelectedCards = checkCardsInHand(cardsInHand);
-  var cardsToPick = self.gameSetup.cardsToPick;  //finds out what the current rounds 'number of cards to pick' is set to
-  if (numberOfSelectedCards == cardsToPick) {
-    nextPlayer(player); //sends white cards, and sets the next player.
-  }
-}
-
 //~.:------------>TIES PLAYER TO CARD THAT WAS SENT<------------:.~//
-function whiteCardsToSend(player){
-  var playerCards = player.currentCards; //finds the cards that the player is holding
-  var playerName = player.playerName;
+function whiteCardsToSend(playerCards){
+
+  // var playerName = player.playerName;
   for (var i = 0; i < playerCards.length; i++) { //loops through the players cards
-    playerCards[i].playerName = playerName; //this ties the player to the card that was sent.
+    // playerCards[i].playerName = playerName; //this ties the player to the card that was sent.
     if(playerCards[i].selected){ //finds the ones that have been selected
-      self.round.cardsToJudge.push(playerCards[i]); //adds the card to the cards to judge array.
+      self.host.cardsToJudge.push(playerCards[i]); //adds the card to the cards to judge array.
       playerCards.splice(i, 1);
       // playerCards[i] = {removeMe: i}; //sets that card to null.
-      for (var i = 0; i < self.round.cardsToJudge.length; i++) {//changes all cards in the array from selected to unselected.
-        self.round.cardsToJudge[i].selected = false;
+      for (var i = 0; i < self.host.cardsToJudge.length; i++) {//changes all cards in the array from selected to unselected.
+        self.host.cardsToJudge[i].selected = false;
       }//ends for
     }//ends if
   }//ends for
-  shuffleArray(self.round.cardsToJudge); //shuffles the array so that the czar doesn't know who the card came from.
+  shuffleArray(self.host.cardsToJudge); //shuffles the array so that the czar doesn't know who the card came from.
+  console.log('cards to judge', self.host.cardsToJudge);
 }//ends function
 
 //~.:------------>SHUFFLE THE WHITE CARDS SO THE CZAR DOESN'T KNOW WHO SENT THEM<------------:.~//
@@ -376,7 +380,7 @@ function shuffleArray(array) {
 //    CZAR FUNCTIONS    //
 //                      //
 //**********************//
-
+//~.:------------>SETS THE CURRENT CZAR<------------:.~//
 //hard coded who czar is... NEED TO MAKE DYNAMIC
 function setCzar(){
   console.log('set czar', self.host.players);
@@ -400,10 +404,32 @@ function setCzar(){
   else {
     player[0].isCzar = true;
   }
-  console.log(player);
+  //send the players array to the server so it can determine the correct socket to emit the new view to
+  socket.emit('setCzar', self.host.players);
+}
+//~.:------------>CHANGES THE CZAR VIEW<------------:.~//
+function czarView(){
+  console.log('czar view');
+  $scope.$apply(showCzar());
 }
 
-//player view needs to change based on who the Czar is.
+function showCzar(){
+  self.playerIsCzar = true;
+}
+
+function setCzarToFalse(){
+  $scope.$apply(noCzar());
+}
+//Sets all players isCzar to false
+function noCzar(){
+  //makes view false (can I get rid of this?)
+  self.playerIsCzar = false;
+  //makes the status in the host object false.
+  for (var i = 0; i < self.host.players.length; i++) {
+    self.host.players[i].isCzar = false;
+  }
+}
+
 //host view needs to reflect who the Czar is.
 
 //select the CZAR player

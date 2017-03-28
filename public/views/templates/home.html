@@ -38,7 +38,7 @@
         <!-- <div class="card" ng-repeat="card in hc.players.cardsInHand" ng-class="{'card':true,'selectedCard' : card.selected}" ng-click="gc.selectCard(card, gc.playerArray[0].currentCards)"> -->
           {{card.text}}
         </div>
-        <button ng-click="gc.sendCardsToCzar(gc.playerArray[0])" type="button" name="button">Send Card(s)</button>
+        <button ng-click="hc.sendCardsToCzar(hc.playerCardsInHand.playerCards)" type="button" name="button">Send Card(s)</button>
       </div>
       <div ng-show="hc.playerIsCzar" class = "czar">
         <h1>Player 1</h1>
