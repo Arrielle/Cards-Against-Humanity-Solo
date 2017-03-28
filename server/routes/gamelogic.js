@@ -13,6 +13,7 @@ exports.initGame = function(sio, socket){
   gameSocket.on('changePlayerView', changePlayerView);
   gameSocket.on('findPlayersCards', findPlayersCards);
   gameSocket.on('setCzar', setCzar);
+  gameSocket.on('cardsToJudge', cardsToJudge);
   // gameSocket.on('hostCountdownFinished', hostStartGame);
   // gameSocket.on('hostNextRound', hostNextRound);
 
@@ -124,4 +125,10 @@ function setCzar(playersObject){
       //also alert host who the czar is.
     }
   }
+}
+
+function cardsToJudge(data){
+  var cardsToJudge = data.cardsToJudge;
+  var gameId = data.players[0].gameId;
+  io.sockets.in(gameId).emit('czarCards', cardsToJudge);
 }

@@ -19,6 +19,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   socket.on('changePlayerView', onChangePlayerView);
   socket.on('dealWhiteCards', dealWhiteCards);
   socket.on('showCzarView', czarView);
+  socket.on('czarCards', updateCzarView);
 
   //*************************//
   //                         //
@@ -328,6 +329,8 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     if (numberOfSelectedCards == cardsToPick) {
       // nextPlayer(player); //sends white cards, and sets the next player.
       whiteCardsToSend(playerCards);
+      console.log('cards to judge???', self.host.cardsToJudge);
+      socket.emit('cardsToJudge', self.host);
     }
   }
 
@@ -412,6 +415,17 @@ function showCzar(){
 function setCzarToFalse(){
   $scope.$apply(noCzar());
 }
+
+function updateCzarView(data){
+  console.log(data);
+  $scope.$apply(cardsToJudgeUpdateView(data));
+}
+
+function cardsToJudgeUpdateView(data){
+  console.log('what is my data', data);
+  self.host.cardsToJudge = data;
+}
+
 //Sets all players isCzar to false
 function noCzar(){
   //makes view false (can I get rid of this?)
