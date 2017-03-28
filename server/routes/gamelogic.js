@@ -11,6 +11,7 @@ exports.initGame = function(sio, socket){
   gameSocket.on('hostRoomFull', hostPrepareGame);
   gameSocket.on('changeHostView', changeHostView);
   gameSocket.on('changePlayerView', changePlayerView);
+  gameSocket.on('findPlayersCards', findPlayersCards);
   // gameSocket.on('hostCountdownFinished', hostStartGame);
   // gameSocket.on('hostNextRound', hostNextRound);
 
@@ -92,6 +93,18 @@ function playerJoinGame(data) {
 }
 
 function changePlayerView(playerSocketId){
-  console.log('player socket id?', playerSocketId);
   io.to(playerSocketId).emit('changePlayerView');
+}
+
+function findPlayersCards(playersObject){
+  //players object is all 4 players
+  //loop through these players to find their socket and cards in hand
+  for (var i = 0; i < playersObject.length; i++) {
+    //cards in 'this' players hand.
+    var cards = playersObject[i].cardsInHand;
+    //'this' players socketId
+    var playerSocketId = playersObject[i].mySocketId;
+    //emit these cards specifically to this player
+    io.to(playerSocketId).emit('dealWhiteCards', {playerCards: cards});
+  }
 }

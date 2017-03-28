@@ -28,9 +28,29 @@
 //*****************************//
 -->
 <div ng-show="hc.playerGameTemplate">
-  <h1>This is the players View</h1>  <div id = "container">
-
+  <h1>This is the players View</h1>
+  <div class = "playerView">
+    <!-- <div ng-model="gc.playerArray" ng-show="gc.playerArray[0].currentPlayer" > -->
+      <!-- <div ng-show="!isCzar" class = "nonCzar"> -->
+        <h1>Player 1</h1> <!-- replace with player name! -->
+        <h2>Pick the card you'd like to send to the Czar.</h2>
+        <div class="card" ng-repeat="card in hc.playerCardsInHand.playerCards" ng-class="{'card':true,'selectedCard' : card.selected}" ng-click="hc.selectCard(card, hc.playerCardsInHand.playerCards)">
+        <!-- <div class="card" ng-repeat="card in hc.players.cardsInHand" ng-class="{'card':true,'selectedCard' : card.selected}" ng-click="gc.selectCard(card, gc.playerArray[0].currentCards)"> -->
+          {{card.text}}
+        </div>
+        <button ng-click="gc.sendCardsToCzar(gc.playerArray[0])" type="button" name="button">Send Card(s)</button>
+      </div>
+      <div ng-show="gc.playerArray[0].isCzar" class = "czar">
+        <h1>Player 1</h1>
+        <h2>You are CZAR!</h2>
+        <div class="card" ng-repeat="card in gc.round.cardsToJudge" ng-class="{'card':true,'selectedCard' : card.selected}" ng-click="gc.selectCard(card, gc.round.cardsToJudge)">
+          {{card.text}}
+        </div>
+        <button ng-click="gc.selectRoundWinner()" type="button" name="button">Declare Winner</button>
+      </div>
+    </div>
   </div>
+
 </div>
 
 <!--
