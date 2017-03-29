@@ -320,7 +320,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     card.selected = true; //gives the card that was selected a property of 'selected' and sets it to true.
     card.playerName = playerName;
     playerObject.hasPlayed = true; //need to update the view based on this...
-    console.log('WHATCHUFINNADO', playerObject);
+    console.log('Player Object', playerObject, 'self.host.players', self.host.players);
     var cardsToPick = self.gameSetup.cardsToPick;  //finds out what the current rounds 'number of cards to pick' is set to
     var numberOfSelectedCards = checkCardsInHand(cardsInHand);  //Checks to see if the correct number of cards has been chosen
     if (numberOfSelectedCards > cardsToPick){ //if the number of cards selected is > cards to pick, it removes the .selected from all cards in the array.
@@ -354,7 +354,11 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       // nextPlayer(player); //sends white cards, and sets the next player.
       whiteCardsToSend(playerCards);
       console.log('cards to judge???', self.host.cardsToJudge);
+      //this updates the czar view if everyone has played.
+      if (self.host.cardsToJudge.length == 2){
       socket.emit('cardsToJudge', self.host);
+      //clear any placeholder cards
+      }
       socket.emit('playerHideButton', playerObject);
     }
   }
@@ -533,14 +537,25 @@ function checkIfGameOver(){
   console.log('GAME IS NOT OVER');
 }
 
-//host view needs to reflect who the Czar is.
+function readyToJudge(){
+  for (var i = 0; i < self.host.players.length; i++) {
+    self.host.players[i].isReady
+  }
+}
+
+//loop through all players, if every player who is not czar hasPlayed, display the button on the czar view
+//
+
 //check if all players have played their cards
-//if they have, it's time for czar to select a winner
+  //if they have, it's time for czar to select a winner
 //award points
+  //update host view to reflect new score.
 //check if game winner
 //reset important round information.
 //select the next czar
 //draw white cards
 //draw black card
+//host view needs to reflect who the Czar is.
+
 
 }]);

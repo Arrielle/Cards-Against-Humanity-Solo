@@ -132,6 +132,7 @@ function setCzar(playersObject){
 function cardsToJudge(data){
   var cardsToJudge = data.cardsToJudge;
   var gameId = data.players[0].gameId;
+  var player = data;
   io.sockets.in(gameId).emit('czarCards', cardsToJudge);
 }
 
