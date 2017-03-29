@@ -40,7 +40,6 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     mySocketId: '',
     //Identifies the current round. Starts at 0 because it corresponds
     //to the array of winnign black cards stored on the server.
-    currentRound: 0,
     isStarted: false,
     whiteCardsRequired: 10,
     cardsToPick: 1,
@@ -48,13 +47,14 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   }
 
   self.host = {
+    databaseId: null,
     numPlayersInRoom: 0,
     hostSocketId: null,
     isNewGame: false,
     isOver: false,
     players: [],
     currentBlackCard: null,
-    currentRound: 0,
+    currentRound: 1,
     cardsToJudge: [],
     pointsToWin: 2,
     winner: null,
@@ -85,7 +85,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   function gameInit(data) {
     self.gameSetup.gameId = data.gameId;
     self.gameSetup.mySocketId = data.mySocketId;
-    self.host.hostSocketId = data.mySocketId;
+    self.host.hostSocketId = data.mySocketId;//not getting through
     self.gameSetup.myRole = 'Host';
     self.gameSetup.isStarted = true;
     // gameSetup.Host.numPlayersInRoom = 0;
@@ -210,6 +210,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       data: gameIdObject
     }).then(function(response){
       databaseId = response.data[0].id;
+      self.host.databaseId = response.data[0].id
       //Draw a black card. A black card that has been drawn, cannot be drawn again.
       drawBlackCard(databaseId);
       drawCards();
@@ -269,7 +270,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       var whiteCardDeck = response.data; //this is the shuffled deck of white cards
       for (var i = 0; i < self.host.players.length; i++) { //loops through the player array
         var cardsToDraw = self.gameSetup.whiteCardsRequired - self.host.players[i].cardsInHand.length; //sets the number of cards to draw based on how many are needed
-        addCardsToHand(cardsToDraw, whiteCardDeck, self.host.players[i]); //takes white cards from the shuffled white deck based on num needed
+        addCardsToHand(cardsToDraw, whiteCardDeck, self.host.players[i], self.databaseId); //takes white cards from the shuffled white deck based on num needed
         cards = self.host.players[i].cardsInHand; //sets cards to the current players hand of cards.
         for (var j = 0; j < cards.length; j++) { //loops through the players cards and adds them to the database one at a time
           removeCardsFromDeck(cards[j].id); //This adds cards to my database so that I can compare later to ensure no cards that have already been drawn are drawn again.
@@ -278,12 +279,15 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     });
   }
   //~.:------------>ADD CARDS TO THE PLAYER OBJECT<------------:.~//
-  function addCardsToHand(numberCardsToDraw, deck, player) {
+  function addCardsToHand(numberCardsToDraw, deck, player, databaseId) {
     var playerName = player.playerName;
     for (i = 0; i < numberCardsToDraw; i++) {
       var whiteIndex = Math.floor(Math.random() * deck.length); //selects a white card from the deck at random
       player.cardsInHand.push(deck[whiteIndex]); //pushes the random card into the players hand
       deck.splice(whiteIndex, 1); //Removes the random card from the shuffled deck.
+    }
+    for (var i = 0; i < player.cardsInHand.length; i++) {
+      player.cardsInHand[i].databaseId = self.databaseId;
     }
     socket.emit('findPlayersCards', self.host.players);
   }
@@ -355,7 +359,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       whiteCardsToSend(playerCards);
       console.log('cards to judge???', self.host.cardsToJudge);
       //this updates the czar view if everyone has played.
-      if (self.host.cardsToJudge.length == 2){
+      if (self.host.cardsToJudge.length == 1){
       socket.emit('cardsToJudge', self.host);
       //clear any placeholder cards
       }
@@ -487,19 +491,21 @@ function noCzar(){
 //                           //
 //***************************//
 
-self.selectRoundWinner = function(){
-  console.log('!!cards to judge?', self.host.cardsToJudge);
-  // // go through the array of cards and make sure that one of them is selected
+self.selectRoundWinner = function(host){
+  console.log('WHAT IS IN HERE?!', host);
+  //  NEED THE DATABASE ID
+  //  Go through the array of cards and make sure that one of them is selected
   for (var i = 0; i < self.host.cardsToJudge.length; i++) {
     if(self.host.cardsToJudge[i].selected){
       setRoundWinner(); //finds who won the round and awards them points
       //ALERT USERS WHO WON... THEN RESET EVERYTHING
       checkIfGameOver(); //checks to see if anyone has 10 points yet
-  //     newRound(); //sets up for a new round
-  //     drawBlackCard(); //draws a new black card
-  //     drawCards(self.playerArray); // draws white cards
-  //     setCzar(); //needs to set current czar to nothing and then set the next czar
-  //     UPDATE ALL VIEWS
+      newRound(); //sets up for a new round
+      // drawBlackCard(); //draws a new black card NEED DATABASE ID
+      // drawCards(); // draws white cards NEED DATABASE ID
+      setCzar(); //needs to set current czar to nothing and then set the next czar
+      //UPDATE ALL VIEWS
+      console.log(self.host.players);
     }
   }
 }
@@ -537,9 +543,11 @@ function checkIfGameOver(){
   console.log('GAME IS NOT OVER');
 }
 
-function readyToJudge(){
-  for (var i = 0; i < self.host.players.length; i++) {
-    self.host.players[i].isReady
+function newRound(){
+  if(!self.host.isOver){
+    self.host.currentRound++;
+    self.host.currentBlackCard = null;
+    self.host.cardsToJudge = [];
   }
 }
 
