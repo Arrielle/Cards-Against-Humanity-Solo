@@ -14,7 +14,6 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   socket.on('newGameCreated', onNewGameCreated );
   socket.on('errorAlert', error);
   socket.on('playerJoinedRoom', playerJoinedRoom);
-  // socket.on('beginNewGame', beginNewGame );
   socket.on('changeHostView', onChangeHostView);
   socket.on('changePlayerView', onChangePlayerView);
   socket.on('dealWhiteCards', dealWhiteCards);
@@ -144,24 +143,9 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //
   function updateWaitingScreen(playerData) {
     console.log('UPDATE WAITING SCREEND DATA', playerData);
-    // Update host screen - switch to angular
+    // Update host screen - switch to angular!! :)
     $('#playersWaiting').append('<p/>Player ' + playerData.playerName + ' joined the game.</p>');
     $('#playerWaitingMessage').append('<p>Joined Game ' + playerData.gameId + '. Waiting on other players... Please wait for the game to begin.</p>');
-    // Store the new player's data on the Host.
-    // self.host.players.push(playerData);
-    // // Increment the number of players in the room
-    // self.host.numPlayersInRoom += 1;
-    // If x players have joined, start the game!
-    // if (self.host.numPlayersInRoom === 2) {
-    //   console.log('Room is full. Initilizing hostRoomFull!');
-    //   // Let the server know that x players are present.
-    //   //also send players so that I can fill the empty card array on the server...
-    //   updateData = {
-    //     gameId : self.gameSetup.gameId,
-    //     playersArray : self.host.players
-    //   }
-    //   socket.emit('hostRoomFull', updateData);
-    // }
   }
 
   //************************//
@@ -170,36 +154,23 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //                        //
   //************************//
 
-  // function beginNewGame(data) {
-  //   //spin up host view
-  //   console.log('begin new game data', data);
-  //   hostSocketId = data.hostSocketId;
-  //   socket.emit('changeHostView', hostSocketId)
-  //   // socket.emit('changeHostView', self.host.hostSocketId);
-  //   //loop through player sockets to find player socket ID information, and update their view specifically
-  //   for (var i = 0; i < self.host.players.length; i++) {
-  //     socketId = self.host.players[i].mySocketId;
-  //     socket.emit('changePlayerView', socketId);
-  //   }
-  // }
-
   function onChangeHostView(data, game){
 
-    self.players = game.players;
-    //need player data.
-    console.log('data onChangeHostView', data);
-    console.log('game onChangeHostView', game);
-    console.log('players onChangeHostView', self.players);
     postNewGameToDatabase(self.gameSetup.gameId);
     //changes the hosts view
     self.hostGameTemplate = data.hostGameTemplate;
     self.gameSetup.isStarted = data.isStarted;
     self.gameTemplate = true;
+    self.players = game.players;
   }
 
   function onChangePlayerView(data){
-    self.playerGameTemplate = data.playerGameTemplate;
-    self.playerJoining = data.playerJoining;
+    $scope.$apply(scopePlayer(data));
+  }
+
+  function applyPlayerView(data){
+    self.playerGameTemplate = data.playerGameTemplate; //true
+    self.playerJoining = data.playerJoining; //false
   }
 
   //**********************************************************//
