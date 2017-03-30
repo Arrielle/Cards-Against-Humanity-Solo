@@ -17,7 +17,6 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   socket.on('beginNewGame', beginNewGame );
   socket.on('changeHostView', onChangeHostView);
   socket.on('changePlayerView', onChangePlayerView);
-  socket.on('setCzarToFalse', setCzarToFalse);
   socket.on('dealWhiteCards', dealWhiteCards);
   socket.on('showCzarView', czarView);
   socket.on('czarCards', updateCzarView);
@@ -150,18 +149,14 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     if (self.host.numPlayersInRoom === 2) {
       console.log('Room is full. Initilizing hostRoomFull!');
       // Let the server know that x players are present.
-      socket.emit('hostRoomFull', self.gameSetup.gameId);
+      //also send players so that I can fill the empty card array on the server...
+      updateData = {
+        gameId : self.gameSetup.gameId,
+        playersArray : self.host.players
+      }
+      socket.emit('hostRoomFull', updateData);
     }
   }
-  //
-  // function updatePlayerWaitingScreen(data) {
-  //   console.log('what is this data?', data);
-  //   if(socket.id === data.mySocketId){
-  //     self.gameSetup.myRole = 'Player';
-  //     self.gameSetup.gameId = data.gameId;
-  // $('#playerWaitingMessage').append('<p>Joined Game ' + data.gameId + '. Waiting on other players... Please wait for the game to begin.</p>');
-  //   }
-  // }
 
   //************************//
   //                        //
@@ -170,36 +165,25 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //************************//
 
   function beginNewGame(data) {
-    //run the game start function in here so I have the data?
-
+    //spin up host view
     socket.emit('changeHostView', self.host.hostSocketId)
     //loop through player sockets to find player socket ID information, and update their view specifically
     for (var i = 0; i < self.host.players.length; i++) {
       socketId = self.host.players[i].mySocketId;
-      // name = self.host.players[i].playerName;
       socket.emit('changePlayerView', socketId);
     }
   }
 
-  function onChangeHostView(){
+  function onChangeHostView(data){
     postNewGameToDatabase(self.gameSetup.gameId);
     //changes the hosts view
-    $scope.$apply(hostGameTemplate());
+    self.hostGameTemplate = data.hostGameTemplate;
+    self.gameSetup.isStarted = data.isStarted;
   }
 
-  function onChangePlayerView(){
-    //changes the players view
-    $scope.$apply(playerGameTemplate());
-  }
-
-  function hostGameTemplate(){
-    self.hostGameTemplate = true;
-    self.gameSetup.isStarted;
-  }
-
-  function playerGameTemplate(){
-    self.playerGameTemplate = true;
-    self.playerJoining = false;
+  function onChangePlayerView(data){
+    self.playerGameTemplate = data.playerGameTemplate;
+    self.playerJoining = data.playerJoining;
   }
 
   //**********************************************************//
@@ -420,39 +404,11 @@ function shuffleArray(array) {
 //~.:------------>SETS THE CURRENT CZAR<------------:.~//
 //hard coded who czar is... NEED TO MAKE DYNAMIC
 function setCzar(player){
-  // console.log('second player does not know first player exists.', player);
-  // if (player[0].isCzar){
-  //   player[0].isCzar = false;
-  //   player[1].isCzar = true;
-  // } else if (player[1].isCzar){
-  //   player[1].isCzar = false;
-  //   // player[2].isCzar = true;
-  //   player[0].isCzar = true;
-  // }
-  // // else if (player[2].isCzar){
-  // //   player[2].isCzar = false;
-  // //   player[3].isCzar = true;
-  // // }else if (player[3].isCzar){
-  // //   player[3].isCzar = false;
-  // //   player[0].isCzar = true;
-  // // }
-  // else {
-  //   player[0].isCzar = true;
-  // }
-  //send the players array to the server so it can determine the correct socket to emit the new view to
   socket.emit('setCzar', self.host.players);
 }
 //~.:------------>CHANGES THE CZAR VIEW<------------:.~//
 function czarView(data){
-  $scope.$apply(showCzar(data));
-}
-
-function showCzar(data){
   self.playerIsCzar = data;
-}
-
-function setCzarToFalse(){
-  $scope.$apply(noCzar());
 }
 
 function updateCzarView(data){

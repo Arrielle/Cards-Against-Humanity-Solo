@@ -38,25 +38,26 @@ function hostCreateNewGame() {
   // console.log('Host has created a new game!');
   // console.log('Game ID: ', thisGameId, 'Socket ID: ', this.id);
   // Join the Room and wait for the players
-  console.log('gamesocket.adapter: ', gameSocket.adapter, 'hostId?', this.id);
   this.join(thisGameId.toString());
 };
 
-function hostPrepareGame(gameId) {
+function hostPrepareGame(data) {
   var sock = this;
   var data = {
     mySocketId : sock.id,
-    gameId : gameId
+    gameId : data.gameId,
+    players : data.playersArray
   };
   console.log('host prep data', data);
-  console.log("All Players Present. Preparing game...");
   io.sockets.in(data.gameId).emit('beginNewGame', data);
 }
 
 function changeHostView(hostSocketId){
-  console.log('host socket id?', hostSocketId);
-  io.to(hostSocketId).emit('changeHostView');
-
+  data = {
+    hostGameTemplate: true,
+    isStarted: true
+  }
+  io.to(hostSocketId).emit('changeHostView', data);
 }
 
 /* ****************************
@@ -98,7 +99,11 @@ function playerJoinGame(data) {
 }
 
 function changePlayerView(playerSocketId){
-  io.to(playerSocketId).emit('changePlayerView');
+  data = {
+    playerGameTemplate: true,
+    playerJoining: false
+  }
+  io.to(playerSocketId).emit('changePlayerView', data);
 }
 
 function findPlayersCards(playersObject){
@@ -116,6 +121,12 @@ function findPlayersCards(playersObject){
     // io.to(playerSocketId).emit('dealWhiteCards', {playerCards: cards, playerName: name, playersObject: playersObject[i]});
   }
 }
+
+/* ********************************
+*                                 *
+*       GAME LOGIC FUNCTIONS      *
+*                                 *
+******************************** */
 
 function setCzar(playersArray){
   console.log('PLAYERS ARRAY', playersArray);
