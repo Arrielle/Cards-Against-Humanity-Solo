@@ -60,6 +60,14 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     winner: null,
   }
 
+  self.player = {
+    playerName: null,
+    playerScore: null,
+    cardsInHand: [],
+    isCzar: false,
+    isReady: false
+  }
+
   //*******************************//
   //                               //
   //    Host Join/Game Creation    //
@@ -72,6 +80,10 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //Which then spins up the new game information
   self.onCreateClick = function () {
     console.log('Clicked "Create A Game"');
+    // data = {
+    //   gameData: self.host,
+    //   playerData: self.player
+    // }
     socket.emit('hostCreateNewGame');
   }
 
@@ -166,6 +178,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
 
   function beginNewGame(data) {
     //spin up host view
+    console.log('game ID in beginNewGame', data.gameId);
     socket.emit('changeHostView', self.host.hostSocketId)
     //loop through player sockets to find player socket ID information, and update their view specifically
     for (var i = 0; i < self.host.players.length; i++) {
@@ -175,6 +188,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   }
 
   function onChangeHostView(data){
+    console.log('Game ID onChangeHostView', self.gameSetup.gameId);
     postNewGameToDatabase(self.gameSetup.gameId);
     //changes the hosts view
     self.hostGameTemplate = data.hostGameTemplate;

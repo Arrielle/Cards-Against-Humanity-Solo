@@ -44,7 +44,7 @@ function hostCreateNewGame() {
 function hostPrepareGame(data) {
   var sock = this;
   var data = {
-    mySocketId : sock.id,
+    hostSocketId : sock.id,
     gameId : data.gameId,
     players : data.playersArray
   };
