@@ -42,14 +42,15 @@ function hostCreateNewGame() {
 };
 
 function hostPrepareGame(data) {
+  console.log('host PREAP data', data);
   var sock = this;
-  var data = {
+  var newData = {
     hostSocketId : sock.id,
     gameId : data.gameId,
     players : data.playersArray
   };
   console.log('host prep data', data);
-  io.sockets.in(data.gameId).emit('beginNewGame', data);
+  io.sockets.in(data.gameId).emit('beginNewGame', newData, data);
 }
 
 function changeHostView(hostSocketId){
