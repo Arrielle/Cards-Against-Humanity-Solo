@@ -110,7 +110,7 @@ function changeHostView(){
 *                             *
 *       Player FUNCTIONS      *
 *                             *
-******************************* */
+**************************** */
 
 // A player clicked the 'START GAME' button.
 // Attempt to connect them to the room that matches the gameId entered by the player.

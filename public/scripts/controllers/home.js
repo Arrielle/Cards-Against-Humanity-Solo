@@ -142,7 +142,6 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   }
   //
   function updateWaitingScreen(playerData) {
-    console.log('UPDATE WAITING SCREEND DATA', playerData);
     // Update host screen - switch to angular!! :)
     $('#playersWaiting').append('<p/>Player ' + playerData.playerName + ' joined the game.</p>');
     $('#playerWaitingMessage').append('<p>Joined Game ' + playerData.gameId + '. Waiting on other players... Please wait for the game to begin.</p>');
@@ -156,7 +155,9 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
 
   function onChangeHostView(data, game){
 
-    postNewGameToDatabase(self.gameSetup.gameId);
+    console.log('game id? ', game.gameId, 'players? ', game.players);
+
+    postNewGameToDatabase(game.gameId, game.players);
     //changes the hosts view
     self.hostGameTemplate = data.hostGameTemplate;
     self.gameSetup.isStarted = data.isStarted;
@@ -165,7 +166,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   }
 
   function onChangePlayerView(data){
-    $scope.$apply(scopePlayer(data));
+    $scope.$apply(applyPlayerView(data));
   }
 
   function applyPlayerView(data){
@@ -180,7 +181,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //**********************************************************//
 
   //Add game to the database
-  function postNewGameToDatabase(inGameId){
+  function postNewGameToDatabase(inGameId, players){
     //bring data here and put it into setCzar ---
     gameIdObject = {gameId: inGameId};
     $http({
@@ -191,9 +192,9 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       databaseId = response.data[0].id;
       self.host.databaseId = response.data[0].id
       //Draw a black card. A black card that has been drawn, cannot be drawn again.
-      drawBlackCard(databaseId);
-      drawCards(databaseId);
-      // setCzar(self.host.players);
+      drawBlackCard(databaseId, players);
+      drawCards(databaseId, players);
+      setCzar(players);
     });
   }
 
@@ -237,7 +238,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //                            //
   //****************************//
   //~.:------------>DRAW WHITE CARDS AT RANDOM<------------:.~//
-  function drawCards(databaseId){ //Give this function the player array
+  function drawCards(databaseId, players){ //Give this function the player array
     objectToSend = {gameId: databaseId}; //I need to send the database ID
     $http({
       method: 'POST',
@@ -391,8 +392,8 @@ function shuffleArray(array) {
 //**********************//
 //~.:------------>SETS THE CURRENT CZAR<------------:.~//
 //hard coded who czar is... NEED TO MAKE DYNAMIC
-function setCzar(player){
-  socket.emit('setCzar', self.host.players);
+function setCzar(players){
+  socket.emit('setCzar', players);
 }
 //~.:------------>CHANGES THE CZAR VIEW<------------:.~//
 function czarView(data){
