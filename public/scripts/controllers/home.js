@@ -88,24 +88,18 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   }
 
   function onNewGameCreated(data) {
+    //Data contains : gameId && hostSocketId
     //$scope.$apply allows angular to see the results even though it's happening outside of angular (sockets).
     //$apply() is used to execute an expression in angular from outside of the angular framework.
     //Because we are calling into the angular framework we need to perform proper scope life cycle of exception handling, executing watches.
     $scope.$apply(gameInit(data));
-    //my main issue - I don't have the database ID
-    //I don't have an array of players (for all players)
   }
 
   function gameInit(data) {
-    self.gameSetup.gameId = data.gameId;
-    self.gameSetup.mySocketId = data.mySocketId;
-    self.host.hostSocketId = data.mySocketId;//not getting through
-    self.gameSetup.myRole = 'Host';
-    self.gameSetup.isStarted = true;
-    // gameSetup.Host.numPlayersInRoom = 0;
-    console.log("Game started with ID: " + self.gameSetup.gameId + ' by host: ' + self.gameSetup.mySocketId);
-    console.log('self.gameSetup on game init?', self.gameSetup);
-
+    console.log("Game started with ID: " + data.gameId + ' by host: ' + data.hostSocketId);
+    //shows game init view.
+    self.isStarted = data.gameIsReady;
+    self.gameId = data.gameId;
   }
 
   //*******************//
@@ -131,7 +125,8 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       playerName : self.playerName,
       playerScore: 0,
       cardsInHand: [],
-      isCzar: false
+      isCzar: false,
+      isReady: false
       // numPlayersInRoom : self.host.numPlayersInRoom,
     };
     socket.emit('playerJoinGame', data);

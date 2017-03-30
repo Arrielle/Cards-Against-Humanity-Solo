@@ -3,7 +3,7 @@
 //    HOME TEMPLATE    //    || This is the view when someone first comes to the site.
 //*********************//
 -->
-<div ng-hide="hc.gameSetup.isStarted || hc.playerJoining || hc.playerGameTemplate || hc.hostGameTemplate">
+<div ng-hide="hc.isStarted || hc.playerJoining || hc.playerGameTemplate || hc.hostGameTemplate">
   <div class = "padding">
     <button ng-click="hc.onCreateClick()" type="button" name="button">Create a New Game</button>
     <button ng-click="hc.playerJoinView()" type="button" name="button">Join a Game</button>
@@ -59,9 +59,9 @@
 //   GAME INITIALIZE TEMPLATE    //    || This is view when Create Game is clicked.
 //*******************************//
 -->
-<div ng-show="hc.gameSetup.isStarted && !hc.hostGameTemplate">
+<div ng-show="hc.isStarted && !hc.gameTemplate">
   <h2>Open this site on your mobile device {{hc.link}}</h2>
-  <h2>Here is your game ID: {{hc.gameSetup.gameId}}</h2>
+  <h2>Here is your game ID: {{hc.gameId}}</h2>
   <!-- Below is where I'll show who has joined the room -->
   <!-- Consider using angular to ng-repeat through players in room. Currently using Jquery  -->
   <div id="playersWaiting"></div>

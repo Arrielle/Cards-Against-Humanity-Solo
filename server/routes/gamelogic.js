@@ -24,6 +24,33 @@ exports.initGame = function(sio, socket){
   // gameSocket.on('playerRestart', playerRestart);
 }
 
+game = {
+  databaseId: null,
+  gameId: null,
+  hostSocketId: null,
+  numPlayersInRoom: 0,
+  players: [],
+  currentBlackCard: null,
+  whiteCardsRequired: 10,
+  cardsToPick: 1,
+  currentRound: 1,
+  cardsToJudge: [],
+  pointsToWin: 2,
+  winner: null,
+  isStarted: false,
+  isNewGame: false,
+  isOver: false,
+}
+
+player = {
+  playerName: null,
+  socketId: null,
+  playerScore: null,
+  cardsInHand: [],
+  isCzar: false,
+  isReady: false
+}
+
 /* ****************************
 *                             *
 *       HOST FUNCTIONS        *
@@ -37,18 +64,16 @@ function hostCreateNewGame() {
   // Create a unique Socket.IO Room
   var thisGameId = ( Math.random() * 100000 ) | 0;
   // Return the Room ID (gameId) and the socket ID (mySocketId) to the browser client
-  this.emit('newGameCreated', {gameId: thisGameId, mySocketId: this.id});
+  this.emit('newGameCreated', {gameId: thisGameId, hostSocketId: this.id, gameIsReady: true});
   // console.log('Host has created a new game!');
   // console.log('Game ID: ', thisGameId, 'Socket ID: ', this.id);
   // Join the Room and wait for the players
   this.join(thisGameId.toString());
-
-  hostSocketId = this.id;
-  return hostSocketId;
+  game.hostSocketId = this.id;
 };
 
 function hostPrepareGame(data) {
-  console.log('hostsocketid?', hostSocketId);
+  console.log('hostsocketid?', game);
   console.log('host PREAP data', data);
   var sock = this;
   var data = {
@@ -78,8 +103,18 @@ function changeHostView(hostSocketId){
 // Attempt to connect them to the room that matches the gameId entered by the player.
 // data Contains data entered via player's input - playerName and gameId.
 function playerJoinGame(data) {
-  // console.log('Player ' + data.playerName + ' attempting to join game: ' + data.gameId );
-  // A reference to the player's Socket.IO socket object
+
+  // var data = {
+  //   gameId : self.gameId,
+  //   playerName : self.playerName,
+  //   playerScore: 0,
+  //   cardsInHand: [],
+  //   isCzar: false,
+  //   isReady: false
+  //   mySocketId: null
+  //   // numPlayersInRoom : self.host.numPlayersInRoom,
+  // };
+
   var sock = this;
   var room = gameSocket.adapter.rooms[data.gameId];
   // Look up the room ID in the Socket.IO manager object to make sure it exists
@@ -96,13 +131,13 @@ function playerJoinGame(data) {
     // Emit an event notifying the clients that the player has joined the room.
     io.sockets.in(data.gameId).emit('playerJoinedRoom', data);
     //If the room is full.
-  } else if (room.length > 2){
-    this.emit('errorAlert', {message: "Sorry, but this room is full!"})
-    //If the room does not exist
-  } else {
+  } else if (room == undefined){
     console.log('this room does not exist');
     // Otherwise, send an error message back to the player.
     this.emit('errorAlert', {message: "Sorry about that! It looks like this room does not exist."} );
+  } else if (room.length > 2){
+    this.emit('errorAlert', {message: "Sorry, but this room is full!"})
+    //If the room does not exist
   }
 }
 
