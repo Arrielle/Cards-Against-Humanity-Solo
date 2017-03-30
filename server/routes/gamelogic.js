@@ -38,23 +38,25 @@ function hostCreateNewGame() {
   // console.log('Host has created a new game!');
   // console.log('Game ID: ', thisGameId, 'Socket ID: ', this.id);
   // Join the Room and wait for the players
+  console.log('gamesocket.adapter: ', gameSocket.adapter, 'hostId?', this.id);
   this.join(thisGameId.toString());
 };
 
 function hostPrepareGame(gameId) {
-    var sock = this;
-    var data = {
-        mySocketId : sock.id,
-        gameId : gameId
-    };
-    console.log('host prep data', data);
-    console.log("All Players Present. Preparing game...");
-    io.sockets.in(data.gameId).emit('beginNewGame', data);
+  var sock = this;
+  var data = {
+    mySocketId : sock.id,
+    gameId : gameId
+  };
+  console.log('host prep data', data);
+  console.log("All Players Present. Preparing game...");
+  io.sockets.in(data.gameId).emit('beginNewGame', data);
 }
 
 function changeHostView(hostSocketId){
   console.log('host socket id?', hostSocketId);
   io.to(hostSocketId).emit('changeHostView');
+
 }
 
 /* ****************************
@@ -117,17 +119,32 @@ function findPlayersCards(playersObject){
 
 function setCzar(playersArray){
   console.log('PLAYERS ARRAY', playersArray);
-  //loop through the players
+  if (playersArray[0].isCzar){
+    playersArray[0].isCzar = false;
+    playersArray[1].isCzar = true;
+  } else if (playersArray[1].isCzar){
+    playersArray[1].isCzar = false;
+    // player[2].isCzar = true;
+    playersArray[0].isCzar = true;
+  }
+  // else if (player[2].isCzar){
+  //   player[2].isCzar = false;
+  //   player[3].isCzar = true;
+  // }else if (player[3].isCzar){
+  //   player[3].isCzar = false;
+  //   player[0].isCzar = true;
+  // }
+  else {
+    playersArray[0].isCzar = true;
+  }
+  // loop through the players and find the socket as well as their czar status.
+  // Emit the status to the right socket.
   for (var i = 0; i < playersArray.length; i++) {
-    //if a player is now the Czar, update their view.
+    playerSocketId = playersArray[i].mySocketId;
     if(playersArray[i].isCzar){
-      var playerSocketId = playersArray[i].mySocketId;
-      io.to(playerSocketId).emit('showCzarView');
-      //also alert host who the czar is.
-      //if a player is no longer the Czar, update their view.
+      io.to(playerSocketId).emit('showCzarView', true);
     } else if (!playersArray[i].isCzar){
-      var playerSocketId = playersArray[i].mySocketId;
-      io.to(playerSocketId).emit('setCzarToFalse');
+      io.to(playerSocketId).emit('showCzarView', false)
     }
   }
 }

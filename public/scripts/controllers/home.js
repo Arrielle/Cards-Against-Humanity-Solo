@@ -81,6 +81,8 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     //$apply() is used to execute an expression in angular from outside of the angular framework.
     //Because we are calling into the angular framework we need to perform proper scope life cycle of exception handling, executing watches.
     $scope.$apply(gameInit(data));
+    //my main issue - I don't have the database ID
+    //I don't have an array of players (for all players)
   }
 
   function gameInit(data) {
@@ -130,11 +132,13 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   }
 
   function playerJoinedRoom(data) {
+
     // When a player joins a room, do the updateWaitingScreen funciton.
     updateWaitingScreen(data);
   }
   //
   function updateWaitingScreen(data) {
+
     // Update host screen - switch to angular
     $('#playersWaiting').append('<p/>Player ' + data.playerName + ' joined the game.</p>');
     $('#playerWaitingMessage').append('<p>Joined Game ' + data.gameId + '. Waiting on other players... Please wait for the game to begin.</p>');
@@ -166,7 +170,6 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //************************//
 
   function beginNewGame(data) {
-    postNewGameToDatabase(data.gameId);
     //run the game start function in here so I have the data?
 
     socket.emit('changeHostView', self.host.hostSocketId)
@@ -179,6 +182,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   }
 
   function onChangeHostView(){
+    postNewGameToDatabase(self.gameSetup.gameId);
     //changes the hosts view
     $scope.$apply(hostGameTemplate());
   }
@@ -190,7 +194,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
 
   function hostGameTemplate(){
     self.hostGameTemplate = true;
-    self.gameSetup.isStarted
+    self.gameSetup.isStarted;
   }
 
   function playerGameTemplate(){
@@ -237,6 +241,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     }).then(function(response){
       var blackCard = response.data[0]; //this is the black card that was drawn
       self.host.currentBlackCard = blackCard;
+      console.log('in draw post', self.host.currentBlackCard.text);
       var blackCardId = response.data[0].id;
       // console.log('blackCardId', blackCardId, 'databaseId', self.databaseId);
       //Make sure the black card that was drawn, cannot be drawn again.
@@ -415,35 +420,35 @@ function shuffleArray(array) {
 //~.:------------>SETS THE CURRENT CZAR<------------:.~//
 //hard coded who czar is... NEED TO MAKE DYNAMIC
 function setCzar(player){
-  console.log('second player does not know first player exists.', player);
-  if (player[0].isCzar){
-    player[0].isCzar = false;
-    player[1].isCzar = true;
-  } else if (player[1].isCzar){
-    player[1].isCzar = false;
-    // player[2].isCzar = true;
-    player[0].isCzar = true;
-  }
-  // else if (player[2].isCzar){
-  //   player[2].isCzar = false;
-  //   player[3].isCzar = true;
-  // }else if (player[3].isCzar){
-  //   player[3].isCzar = false;
+  // console.log('second player does not know first player exists.', player);
+  // if (player[0].isCzar){
+  //   player[0].isCzar = false;
+  //   player[1].isCzar = true;
+  // } else if (player[1].isCzar){
+  //   player[1].isCzar = false;
+  //   // player[2].isCzar = true;
   //   player[0].isCzar = true;
   // }
-  else {
-    player[0].isCzar = true;
-  }
+  // // else if (player[2].isCzar){
+  // //   player[2].isCzar = false;
+  // //   player[3].isCzar = true;
+  // // }else if (player[3].isCzar){
+  // //   player[3].isCzar = false;
+  // //   player[0].isCzar = true;
+  // // }
+  // else {
+  //   player[0].isCzar = true;
+  // }
   //send the players array to the server so it can determine the correct socket to emit the new view to
   socket.emit('setCzar', self.host.players);
 }
 //~.:------------>CHANGES THE CZAR VIEW<------------:.~//
-function czarView(){
-  $scope.$apply(showCzar());
+function czarView(data){
+  $scope.$apply(showCzar(data));
 }
 
-function showCzar(){
-  self.playerIsCzar = true;
+function showCzar(data){
+  self.playerIsCzar = data;
 }
 
 function setCzarToFalse(){
@@ -493,10 +498,11 @@ self.selectRoundWinner = function(host){
       //ALERT USERS WHO WON... THEN RESET EVERYTHING
       checkIfGameOver(); //checks to see if anyone has 10 points yet
       newRound(); //sets up for a new round
-      drawBlackCard(self.host.databaseId); //draws a new black card NEED DATABASE ID
-      drawCards(self.host.databaseId); // draws white cards NEED DATABASE ID
-      setCzar(self.host.players); //needs to set current czar to nothing and then set the next czar
+      // drawBlackCard(self.host.databaseId); //draws a new black card NEED DATABASE ID
+      // drawCards(self.host.databaseId); // draws white cards NEED DATABASE ID
+      // setCzar(self.host.players); //needs to set current czar to nothing and then set the next czar
       //UPDATE ALL VIEWS
+      console.log(self.host.currentBlackCard.text);
       console.log('HOST', self.host);
     }
   }
