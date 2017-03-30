@@ -137,32 +137,31 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     self.playerJoining = true;
   }
 
-  function playerJoinedRoom(data) {
-
+  function playerJoinedRoom(data, gameData) {
     // When a player joins a room, do the updateWaitingScreen funciton.
     updateWaitingScreen(data);
   }
   //
-  function updateWaitingScreen(data) {
-
+  function updateWaitingScreen(playerData) {
+    console.log('UPDATE WAITING SCREEND DATA', playerData);
     // Update host screen - switch to angular
-    $('#playersWaiting').append('<p/>Player ' + data.playerName + ' joined the game.</p>');
-    $('#playerWaitingMessage').append('<p>Joined Game ' + data.gameId + '. Waiting on other players... Please wait for the game to begin.</p>');
+    $('#playersWaiting').append('<p/>Player ' + playerData.playerName + ' joined the game.</p>');
+    $('#playerWaitingMessage').append('<p>Joined Game ' + playerData.gameId + '. Waiting on other players... Please wait for the game to begin.</p>');
     // Store the new player's data on the Host.
-    self.host.players.push(data);
-    // Increment the number of players in the room
-    self.host.numPlayersInRoom += 1;
+    // self.host.players.push(playerData);
+    // // Increment the number of players in the room
+    // self.host.numPlayersInRoom += 1;
     // If x players have joined, start the game!
-    if (self.host.numPlayersInRoom === 2) {
-      console.log('Room is full. Initilizing hostRoomFull!');
-      // Let the server know that x players are present.
-      //also send players so that I can fill the empty card array on the server...
-      updateData = {
-        gameId : self.gameSetup.gameId,
-        playersArray : self.host.players
-      }
-      socket.emit('hostRoomFull', updateData);
-    }
+    // if (self.host.numPlayersInRoom === 2) {
+    //   console.log('Room is full. Initilizing hostRoomFull!');
+    //   // Let the server know that x players are present.
+    //   //also send players so that I can fill the empty card array on the server...
+    //   updateData = {
+    //     gameId : self.gameSetup.gameId,
+    //     playersArray : self.host.players
+    //   }
+    //   socket.emit('hostRoomFull', updateData);
+    // }
   }
 
   //************************//
@@ -173,8 +172,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
 
   function beginNewGame(data) {
     //spin up host view
-    console.log('self.host.hostSocketId', self.host.hostSocketId);
-    console.log('data.hostSocketId', data.hostSocketId);
+    console.log('begin new game data', data);
     hostSocketId = data.hostSocketId;
     socket.emit('changeHostView', hostSocketId)
     // socket.emit('changeHostView', self.host.hostSocketId);
@@ -218,7 +216,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       //Draw a black card. A black card that has been drawn, cannot be drawn again.
       drawBlackCard(databaseId);
       drawCards(databaseId);
-      setCzar(self.host.players);
+      // setCzar(self.host.players);
     });
   }
 

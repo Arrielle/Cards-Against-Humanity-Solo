@@ -28,7 +28,6 @@ game = {
   databaseId: null,
   gameId: null,
   hostSocketId: null,
-  numPlayersInRoom: 0,
   players: [],
   currentBlackCard: null,
   whiteCardsRequired: 10,
@@ -73,16 +72,14 @@ function hostCreateNewGame() {
 };
 
 function hostPrepareGame(data) {
-  console.log('hostsocketid?', game);
-  console.log('host PREAP data', data);
-  var sock = this;
+  game.gameId = game.players[0].gameId;
   var data = {
-    hostSocketId : hostSocketId,
-    gameId : data.gameId,
-    players : data.playersArray
+    hostSocketId : game.hostSocketId,
+    gameId : game.gameId,
+    players : game.players
   };
-  console.log('host prep data', data);
-  io.sockets.in(data.gameId).emit('beginNewGame', data);
+  console.log('HOST PREP DATA BBY', data);
+  io.sockets.in(game.gameId).emit('beginNewGame', data);
 }
 
 function changeHostView(hostSocketId){
@@ -103,18 +100,6 @@ function changeHostView(hostSocketId){
 // Attempt to connect them to the room that matches the gameId entered by the player.
 // data Contains data entered via player's input - playerName and gameId.
 function playerJoinGame(data) {
-
-  // var data = {
-  //   gameId : self.gameId,
-  //   playerName : self.playerName,
-  //   playerScore: 0,
-  //   cardsInHand: [],
-  //   isCzar: false,
-  //   isReady: false
-  //   mySocketId: null
-  //   // numPlayersInRoom : self.host.numPlayersInRoom,
-  // };
-
   var sock = this;
   var room = gameSocket.adapter.rooms[data.gameId];
   // Look up the room ID in the Socket.IO manager object to make sure it exists
@@ -125,11 +110,16 @@ function playerJoinGame(data) {
     data.mySocketId = sock.id;
     // Join the room
     sock.join(data.gameId);
+    //adds the new player to the players array.
+    game.players.push(data);
 
-    // console.log('Player ' + data.playerName + ' joining game: ' + data.gameId );
-
+    if (game.players.length == 2){
+      console.log('GAME IS READY TO START');
+      //now it knows that the room is full.
+      hostPrepareGame();
+    }
     // Emit an event notifying the clients that the player has joined the room.
-    io.sockets.in(data.gameId).emit('playerJoinedRoom', data);
+    io.sockets.in(data.gameId).emit('playerJoinedRoom', data, game);
     //If the room is full.
   } else if (room == undefined){
     console.log('this room does not exist');
