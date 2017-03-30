@@ -14,7 +14,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   socket.on('newGameCreated', onNewGameCreated );
   socket.on('errorAlert', error);
   socket.on('playerJoinedRoom', playerJoinedRoom);
-  socket.on('beginNewGame', beginNewGame );
+  // socket.on('beginNewGame', beginNewGame );
   socket.on('changeHostView', onChangeHostView);
   socket.on('changePlayerView', onChangePlayerView);
   socket.on('dealWhiteCards', dealWhiteCards);
@@ -170,25 +170,31 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //                        //
   //************************//
 
-  function beginNewGame(data) {
-    //spin up host view
-    console.log('begin new game data', data);
-    hostSocketId = data.hostSocketId;
-    socket.emit('changeHostView', hostSocketId)
-    // socket.emit('changeHostView', self.host.hostSocketId);
-    //loop through player sockets to find player socket ID information, and update their view specifically
-    for (var i = 0; i < self.host.players.length; i++) {
-      socketId = self.host.players[i].mySocketId;
-      socket.emit('changePlayerView', socketId);
-    }
-  }
+  // function beginNewGame(data) {
+  //   //spin up host view
+  //   console.log('begin new game data', data);
+  //   hostSocketId = data.hostSocketId;
+  //   socket.emit('changeHostView', hostSocketId)
+  //   // socket.emit('changeHostView', self.host.hostSocketId);
+  //   //loop through player sockets to find player socket ID information, and update their view specifically
+  //   for (var i = 0; i < self.host.players.length; i++) {
+  //     socketId = self.host.players[i].mySocketId;
+  //     socket.emit('changePlayerView', socketId);
+  //   }
+  // }
 
-  function onChangeHostView(data){
-    console.log('Game ID onChangeHostView', self.gameSetup.gameId);
+  function onChangeHostView(data, game){
+
+    self.players = game.players;
+    //need player data.
+    console.log('data onChangeHostView', data);
+    console.log('game onChangeHostView', game);
+    console.log('players onChangeHostView', self.players);
     postNewGameToDatabase(self.gameSetup.gameId);
     //changes the hosts view
     self.hostGameTemplate = data.hostGameTemplate;
     self.gameSetup.isStarted = data.isStarted;
+    self.gameTemplate = true;
   }
 
   function onChangePlayerView(data){

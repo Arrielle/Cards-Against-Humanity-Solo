@@ -79,15 +79,31 @@ function hostPrepareGame(data) {
     players : game.players
   };
   console.log('HOST PREP DATA BBY', data);
-  io.sockets.in(game.gameId).emit('beginNewGame', data);
+  beginNewGame();
+
 }
 
-function changeHostView(hostSocketId){
+function beginNewGame(data) {
+  game.isStarted = true;
+  console.log('new game beginning');
+  //spin up host view
+  // socket.emit('changeHostView', hostSocketId)
+  changeHostView();
+  // socket.emit('changeHostView', self.host.hostSocketId);
+  //loop through player sockets to find player socket ID information, and update their view specifically
+  for (var i = 0; i < game.players.length; i++) {
+    playerSocketId = game.players[i].mySocketId;
+    changePlayerView(playerSocketId);
+  }
+}
+
+function changeHostView(){
+  console.log('at host view?', game.hostSocketId);
   data = {
     hostGameTemplate: true,
     isStarted: true
   }
-  io.to(hostSocketId).emit('changeHostView', data);
+  io.to(game.hostSocketId).emit('changeHostView', data, game);
 }
 
 /* ****************************
