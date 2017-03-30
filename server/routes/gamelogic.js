@@ -109,22 +109,25 @@ function findPlayersCards(playersObject){
     var playerSocketId = playersObject[i].mySocketId;
     //'this' players playerName
     var name = playersObject[i].playerName
-    console.log('playerObject[i]', playersObject[i]);
     //emit these cards specifically to this player
     io.to(playerSocketId).emit('dealWhiteCards', {playersObject: playersObject[i]});
     // io.to(playerSocketId).emit('dealWhiteCards', {playerCards: cards, playerName: name, playersObject: playersObject[i]});
   }
 }
 
-function setCzar(playersObject){
-  for (var i = 0; i < playersObject.length; i++) {
-    //sets all czar to false.
-    this.emit('setCzarToFalse');
-    //this player is czar let them know.
-    if(playersObject[i].isCzar){
-      var playerSocketId = playersObject[i].mySocketId;
+function setCzar(playersArray){
+  console.log('PLAYERS ARRAY', playersArray);
+  //loop through the players
+  for (var i = 0; i < playersArray.length; i++) {
+    //if a player is now the Czar, update their view.
+    if(playersArray[i].isCzar){
+      var playerSocketId = playersArray[i].mySocketId;
       io.to(playerSocketId).emit('showCzarView');
       //also alert host who the czar is.
+      //if a player is no longer the Czar, update their view.
+    } else if (!playersArray[i].isCzar){
+      var playerSocketId = playersArray[i].mySocketId;
+      io.to(playerSocketId).emit('setCzarToFalse');
     }
   }
 }
