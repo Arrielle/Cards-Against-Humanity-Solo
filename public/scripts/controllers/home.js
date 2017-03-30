@@ -157,7 +157,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
 
     console.log('game id? ', game.gameId, 'players? ', game.players);
 
-    postNewGameToDatabase(game.gameId, game.players);
+    postNewGameToDatabase(game.gameId, game.players, game);
     //changes the hosts view
     self.hostGameTemplate = data.hostGameTemplate;
     self.gameSetup.isStarted = data.isStarted;
@@ -181,8 +181,9 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //**********************************************************//
 
   //Add game to the database
-  function postNewGameToDatabase(inGameId, players){
+  function postNewGameToDatabase(inGameId, players, game){
     //bring data here and put it into setCzar ---
+    console.log('post new game', inGameId);
     gameIdObject = {gameId: inGameId};
     $http({
       method: 'POST',
@@ -190,10 +191,12 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       data: gameIdObject
     }).then(function(response){
       databaseId = response.data[0].id;
+      console.log('my shit should have been posted...', databaseId);
+
       self.host.databaseId = response.data[0].id
       //Draw a black card. A black card that has been drawn, cannot be drawn again.
       drawBlackCard(databaseId, players);
-      drawCards(databaseId, players);
+      drawCards(databaseId, players, game);
       setCzar(players);
     });
   }
@@ -238,7 +241,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //                            //
   //****************************//
   //~.:------------>DRAW WHITE CARDS AT RANDOM<------------:.~//
-  function drawCards(databaseId, players){ //Give this function the player array
+  function drawCards(databaseId, players, game){ //Give this function the player array
     objectToSend = {gameId: databaseId}; //I need to send the database ID
     $http({
       method: 'POST',
@@ -246,18 +249,18 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       data: objectToSend //database id object
     }).then(function(response){
       var whiteCardDeck = response.data; //this is the shuffled deck of white cards
-      for (var i = 0; i < self.host.players.length; i++) { //loops through the player array
-        var cardsToDraw = self.gameSetup.whiteCardsRequired - self.host.players[i].cardsInHand.length; //sets the number of cards to draw based on how many are needed
-        addCardsToHand(cardsToDraw, whiteCardDeck, self.host.players[i], databaseId); //takes white cards from the shuffled white deck based on num needed
-        cards = self.host.players[i].cardsInHand; //sets cards to the current players hand of cards.
+      for (var i = 0; i < players.length; i++) { //loops through the player array
+        var cardsToDraw = game.whiteCardsRequired - players[i].cardsInHand.length; //sets the number of cards to draw based on how many are needed
+        addCardsToHand(cardsToDraw, whiteCardDeck, players[i], databaseId, game); //takes white cards from the shuffled white deck based on num needed
+        cards = players[i].cardsInHand; //sets cards to the current players hand of cards.
         for (var j = 0; j < cards.length; j++) { //loops through the players cards and adds them to the database one at a time
           removeCardsFromDeck(cards[j].id, databaseId); //This adds cards to my database so that I can compare later to ensure no cards that have already been drawn are drawn again.
         }
       }
     });
   }
-  //~.:------------>ADD CARDS TO THE PLAYER OBJECT<------------:.~//
-  function addCardsToHand(numberCardsToDraw, deck, player, databaseId) {
+  // ~.:------------>ADD CARDS TO THE PLAYER OBJECT<------------:.~//
+  function addCardsToHand(numberCardsToDraw, deck, player, databaseId, game) {
     var playerName = player.playerName;
     for (i = 0; i < numberCardsToDraw; i++) {
       var whiteIndex = Math.floor(Math.random() * deck.length); //selects a white card from the deck at random
@@ -267,7 +270,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     for (var i = 0; i < player.cardsInHand.length; i++) {
       player.cardsInHand[i].databaseId = databaseId;
     }
-    socket.emit('findPlayersCards', self.host.players);
+    socket.emit('findPlayersCards', game.players);
   }
   //~.:------------>REMOVE THE CARDS FROM THE DECK<------------:.~//
   function removeCardsFromDeck(cardId, databaseId){
