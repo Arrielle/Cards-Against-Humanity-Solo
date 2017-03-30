@@ -178,8 +178,11 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
 
   function beginNewGame(data) {
     //spin up host view
-    console.log('game ID in beginNewGame', data.gameId);
-    socket.emit('changeHostView', self.host.hostSocketId)
+    console.log('self.host.hostSocketId', self.host.hostSocketId);
+    console.log('data.hostSocketId', data.hostSocketId);
+    hostSocketId = data.hostSocketId;
+    socket.emit('changeHostView', hostSocketId)
+    // socket.emit('changeHostView', self.host.hostSocketId);
     //loop through player sockets to find player socket ID information, and update their view specifically
     for (var i = 0; i < self.host.players.length; i++) {
       socketId = self.host.players[i].mySocketId;
@@ -208,6 +211,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
 
   //Add game to the database
   function postNewGameToDatabase(inGameId){
+    //bring data here and put it into setCzar ---
     gameIdObject = {gameId: inGameId};
     $http({
       method: 'POST',

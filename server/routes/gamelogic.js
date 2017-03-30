@@ -29,6 +29,9 @@ exports.initGame = function(sio, socket){
 *       HOST FUNCTIONS        *
 *                             *
 ******************************* */
+
+var hostSocketId = null;
+
 // The 'START' button was clicked and 'hostCreateNewGame' event occurred.
 function hostCreateNewGame() {
   // Create a unique Socket.IO Room
@@ -39,18 +42,22 @@ function hostCreateNewGame() {
   // console.log('Game ID: ', thisGameId, 'Socket ID: ', this.id);
   // Join the Room and wait for the players
   this.join(thisGameId.toString());
+
+  hostSocketId = this.id;
+  return hostSocketId;
 };
 
 function hostPrepareGame(data) {
+  console.log('hostsocketid?', hostSocketId);
   console.log('host PREAP data', data);
   var sock = this;
-  var newData = {
-    hostSocketId : sock.id,
+  var data = {
+    hostSocketId : hostSocketId,
     gameId : data.gameId,
     players : data.playersArray
   };
   console.log('host prep data', data);
-  io.sockets.in(data.gameId).emit('beginNewGame', newData, data);
+  io.sockets.in(data.gameId).emit('beginNewGame', data);
 }
 
 function changeHostView(hostSocketId){
