@@ -192,12 +192,12 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     }).then(function(response){
       databaseId = response.data[0].id;
       console.log('my shit should have been posted...', databaseId);
-
-      self.host.databaseId = response.data[0].id
+      game.databaseId = response.data[0].id;
       //Draw a black card. A black card that has been drawn, cannot be drawn again.
       drawBlackCard(databaseId, players);
       drawCards(databaseId, players, game);
       setCzar(players);
+      console.log('what is the game? ', game);
     });
   }
 
@@ -269,6 +269,8 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     }
     for (var i = 0; i < player.cardsInHand.length; i++) {
       player.cardsInHand[i].databaseId = databaseId;
+      player.cardsInHand[i].gameId = game.gameId;
+      player.cardsInHand[i].playerName = player.playerName;
     }
     socket.emit('findPlayersCards', game.players);
   }
