@@ -136,7 +136,7 @@ function playerJoinGame(data) {
     //adds the new player to the players array.
     game.players.push(data);
 
-    if (game.players.length == 4){
+    if (room.length == 4){
       console.log('GAME IS READY TO START');
       //now it knows that the room is full.
       hostPrepareGame();
