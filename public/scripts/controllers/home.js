@@ -203,13 +203,38 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       data: gameIdObject
     }).then(function(response){
       databaseId = response.data[0].id;
-      console.log('my shit should have been posted...', databaseId);
       game.databaseId = response.data[0].id;
       //Draw a black card. A black card that has been drawn, cannot be drawn again.
       drawBlackCard(databaseId, players, game);
       drawCards(databaseId, players, game);
-      setCzar(game.players);
+      setCzar(game);
+      console.log('DATATREE', game.players);
     });
+  }
+
+  function setCzar(game) {
+    console.log('WHAT IS THE GAME.PLAYERS', game.players);
+    if (game.players[0].isCzar){
+      game.players[0].isCzar = false;
+      game.players[1].isCzar = true;
+    } else if (game.players[1].isCzar){
+      // player[2].isCzar = true;
+      game.players[1].isCzar = false;
+      game.players[0].isCzar = true;
+    }
+    // else if (player[2].isCzar){
+    //   player[2].isCzar = false;
+    //   player[3].isCzar = true;
+    // }else if (player[3].isCzar){
+    //   player[3].isCzar = false;
+    //   player[0].isCzar = true;
+    // }
+    else {
+      game.players[0].isCzar = true;
+    }
+    console.log('WHAT IS THE GAME.PLAYERS', game.players);
+
+    socket.emit('findCzar', game.players)
   }
 
 
@@ -342,23 +367,23 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   return numberOfSelectedCards;
 }
 
-  //~.:------------>SELECT CARD CSS CHANGES WHEN CZAR SELECTING<------------:.~//
-  self.selectCardCzar = function(card, cardsInHand){
-    card.selected = true; //gives the card that was selected a property of 'selected' and sets it to true.
-    var cardsToPick = self.gameSetup.cardsToPick;  //finds out what the current rounds 'number of cards to pick' is set to
-    var numberOfSelectedCards = checkCardsInHand(cardsInHand);  //Checks to see if the correct number of cards has been chosen
-    if (numberOfSelectedCards > cardsToPick){ //if the number of cards selected is > cards to pick, it removes the .selected from all cards in the array.
-      for (var i = 0; i < cardsInHand.length; i++) {
-        cardsInHand[i].selected = false;
-      }
-      card.selected = true; //sets the card that was last clicked as the selected card. (it was removed by my previous if)
+//~.:------------>SELECT CARD CSS CHANGES WHEN CZAR SELECTING<------------:.~//
+self.selectCardCzar = function(card, cardsInHand){
+  card.selected = true; //gives the card that was selected a property of 'selected' and sets it to true.
+  var cardsToPick = self.gameSetup.cardsToPick;  //finds out what the current rounds 'number of cards to pick' is set to
+  var numberOfSelectedCards = checkCardsInHand(cardsInHand);  //Checks to see if the correct number of cards has been chosen
+  if (numberOfSelectedCards > cardsToPick){ //if the number of cards selected is > cards to pick, it removes the .selected from all cards in the array.
+    for (var i = 0; i < cardsInHand.length; i++) {
+      cardsInHand[i].selected = false;
     }
+    card.selected = true; //sets the card that was last clicked as the selected card. (it was removed by my previous if)
   }
+}
 
-  //~.:------------>SEND CARDS TO CZAR<------------:.~//
-  self.sendCardsToCzar = function(playerCards, playerObject){
-    socket.emit('sendCardsToCzar', playerCards, playerObject)
-  }
+//~.:------------>SEND CARDS TO CZAR<------------:.~//
+self.sendCardsToCzar = function(playerCards, playerObject){
+  socket.emit('sendCardsToCzar', playerCards, playerObject)
+}
 
 //**********************//
 //                      //
@@ -367,12 +392,16 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
 //**********************//
 //~.:------------>SETS THE CURRENT CZAR<------------:.~//
 //hard coded who czar is... NEED TO MAKE DYNAMIC
-function setCzar(players){
-  console.log('setCzar: ', players);
-  socket.emit('setCzar', players);
-}
+// function setCzar(players){
+//   console.log('setCzar: ', players);
+//   socket.emit('setCzar', players);
+// }
 //~.:------------>CHANGES THE CZAR VIEW<------------:.~//
 function czarView(data){
+  $scope.$apply(fuckinghell(data));
+}
+
+function fuckinghell(data){
   self.playerIsCzar = data;
 }
 
@@ -422,9 +451,9 @@ function newRound(game){
 
   databaseId = game.databaseId;
   players = game.players;
-  setCzar(players);
+  setCzar(game);
 
-  console.log('atNewRound', game.players);
+  console.log('AFTER atNewRound', game.players);
 
   // drawBlackCard(databaseId, players, game);
   // drawCards(databaseId, players, game);

@@ -15,8 +15,9 @@ exports.initGame = function(sio, socket){
   gameSocket.on('changeHostView', changeHostView);
   gameSocket.on('changePlayerView', changePlayerView);
   gameSocket.on('findPlayersCards', findPlayersCards);
-  gameSocket.on('setCzar', setCzar);
+  // gameSocket.on('setCzar', setCzar);
   gameSocket.on('selectRoundWinner', selectRoundWinner);
+  gameSocket.on('findCzar', findCzar);
   // gameSocket.on('cardsToJudge', cardsToJudge);
   // gameSocket.on('playerHideButton', changePlayerStatus);
   gameSocket.on('sendCardsToCzar', sendCardsToServer);
@@ -251,47 +252,21 @@ function shuffleArray(array) {
 *                                 *
 ******************************** */
 
-function setCzar(playersArray){
-  console.log('HEYBITCH', playersArray);
-  if (playersArray[0].isCzar){
-    playersArray[0].isCzar = false;
-    playersArray[1].isCzar = true;
-    game.players[0].isCzar = false;
-    game.players[1].isCzar = true;
 
-  } else if (playersArray[1].isCzar){
-    playersArray[1].isCzar = false;
-    // player[2].isCzar = true;
-    playersArray[0].isCzar = true;
-    game.players[1].isCzar = false;
-    game.players[0].isCzar = true;
 
-  }
-  // else if (player[2].isCzar){
-  //   player[2].isCzar = false;
-  //   player[3].isCzar = true;
-  // }else if (player[3].isCzar){
-  //   player[3].isCzar = false;
-  //   player[0].isCzar = true;
-  // }
-  else {
-    playersArray[0].isCzar = true;
-    game.players[0].isCzar = true;
+function findCzar(playersArray){
+  console.log('HEY THERE - players array in findCzar server', playersArray);
 
-  }
-  console.log('PLAYERS ARRAY AFTER', playersArray);
-
-  // loop through the players and find the socket as well as their czar status.
-  // Emit the status to the right socket.
   for (var i = 0; i < playersArray.length; i++) {
     playerSocketId = playersArray[i].mySocketId;
     if(playersArray[i].isCzar){
+      console.log('i czar', i);
       io.to(playerSocketId).emit('showCzarView', true);
     } else if (!playersArray[i].isCzar){
+      console.log('i NOT czar', i);
       io.to(playerSocketId).emit('showCzarView', false)
     }
   }
-
 }
 
 
