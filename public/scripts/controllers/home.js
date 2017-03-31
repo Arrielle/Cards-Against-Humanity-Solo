@@ -218,17 +218,16 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       game.players[0].isCzar = false;
       game.players[1].isCzar = true;
     } else if (game.players[1].isCzar){
-      // player[2].isCzar = true;
       game.players[1].isCzar = false;
+      game.players[2].isCzar = true;
+    }
+    else if (game.players[2].isCzar){
+      game.players[2].isCzar = false;
+      game.players[3].isCzar = true;
+    }else if (game.players[3].isCzar){
+      game.players[3].isCzar = false;
       game.players[0].isCzar = true;
     }
-    // else if (player[2].isCzar){
-    //   player[2].isCzar = false;
-    //   player[3].isCzar = true;
-    // }else if (player[3].isCzar){
-    //   player[3].isCzar = false;
-    //   player[0].isCzar = true;
-    // }
     else {
       game.players[0].isCzar = true;
     }

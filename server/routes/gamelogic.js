@@ -127,7 +127,7 @@ function playerJoinGame(data) {
   var room = gameSocket.adapter.rooms[data.gameId];
   // Look up the room ID in the Socket.IO manager object to make sure it exists
   // Additionally, make sure the room is not full.
-  if( room != undefined && room.length <= 2){
+  if( room != undefined && room.length <= 4){
     console.log('this room exists');
     // Attach the socket id to the data object.
     data.mySocketId = sock.id;
@@ -136,7 +136,7 @@ function playerJoinGame(data) {
     //adds the new player to the players array.
     game.players.push(data);
 
-    if (game.players.length == 2){
+    if (game.players.length == 4){
       console.log('GAME IS READY TO START');
       //now it knows that the room is full.
       hostPrepareGame();
@@ -148,7 +148,7 @@ function playerJoinGame(data) {
     console.log('this room does not exist');
     // Otherwise, send an error message back to the player.
     this.emit('errorAlert', {message: "Sorry about that! It looks like this room does not exist."} );
-  } else if (room.length > 2){
+  } else if (room.length > 4){
     this.emit('errorAlert', {message: "Sorry, but this room is full!"})
     //If the room does not exist
   }
@@ -190,7 +190,7 @@ function sendCardsToServer(playerCards, playerObject){
     // nextPlayer(player); //sends white cards, and sets the next player.
     whiteCardsToSend(playerCards, playerObject);
     //this updates the czar view if everyone has played.
-    if (game.cardsToJudge.length == 1){ //HARD CODED
+    if (game.cardsToJudge.length == 3){ //HARD CODED
       var cardsToJudge = game.cardsToJudge;
       var gameId = game.gameId;
       var player = data;

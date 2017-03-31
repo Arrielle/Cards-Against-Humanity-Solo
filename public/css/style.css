@@ -4,6 +4,12 @@
 }*/
 .content{
   margin-top: 220px;
+  margin-bottom: 60px;
+}
+
+.card_content{
+  margin-top: 100px;
+  margin-bottom: 58px;
 }
 
 .jumbotron{
@@ -89,8 +95,8 @@ body {
 }
 
 .card {
-  height: 224px;
-  width: 160px;
+  height: 70px;
+  width: 100%;
   padding: 20px;
   font-weight: bold;
   background-color: white;
@@ -104,11 +110,14 @@ body {
 
 .card:hover{
   transform: translate(0, -5px);
+  z-index: 200;
 }
 
 .selectedCard {
   background-color: #90DB86;
   transform: translate(0, -5px);
+  position: relative;
+  z-index: 200;
 
 }
 
@@ -222,13 +231,56 @@ button:active{
 .btn:focus, .btn:active:focus, .btn.active:focus {
     outline: 0 none;
 }
-#header_container { background:black; color: white; height:150px; left:0; position:fixed; width:100%; top:0; }
-#header{ line-height:60px; margin:0 auto; padding-left: 40px;}
+#header_container_card {
+  background:black;
+  color: white; height:100px;
+  left:0;
+  position:fixed;
+  width:100%;
+  top:0;
+}
 
-#footer_container { background:black; border:1px solid #666; bottom:0; height:60px; left:0; position:fixed; width:100%; }
-#footer { line-height:60px; margin:0 auto; width:940px; text-align:center; }
+#header_container {
+  z-index: 999;
+  background:black;
+  color: white;
+  height:150px;
+  left:0;
+  position:fixed;
+  width:100%;
+  top:0;
+}
 
-#sticky_button {bottom:0; left:0; position:fixed; width:100%; background: white; border-radius: none;}
+#header{
+  line-height:60px;
+  margin:0 auto;
+  padding-left: 40px;
+}
+
+#footer_container {
+  background:black;
+  border:1px solid #666;
+  bottom:0; height:60px;
+  left:0;
+  position:fixed;
+  width:100%;
+}
+
+#footer {
+  line-height:60px;
+  margin:0 auto;
+  width:940px;
+  text-align:center;
+}
+
+.sticky_button {
+  bottom:0;
+  left:0;
+  position:fixed;
+  width:100%;
+  background: white !important;
+  border-radius: none !important;
+}
 
 #playerWaitingMessage {
   margin-top: 30px;
