@@ -44,10 +44,10 @@
       <div ng-show="hc.playerIsCzar" class = "czar">
         <h1>Player 1</h1>
         <h2>You are CZAR!</h2>
-        <div class="card" ng-repeat="card in hc.host.cardsToJudge" ng-class="{'card':true,'selectedCard' : card.selected}" ng-click="hc.selectCardCzar(card, hc.host.cardsToJudge)">
+        <div class="card" ng-repeat="card in hc.cardsToJudge" ng-class="{'card':true,'selectedCard' : card.selected}" ng-click="hc.selectCardCzar(card, hc.cardsToJudge)">
           {{card.text}}
         </div>
-        <button ng-click="hc.selectRoundWinner(hc.host)" type="button" name="button">Declare Winner</button>
+        <button ng-click="hc.selectRoundWinner(hc.cardsToJudge)" type="button" name="button">Declare Winner</button>
       </div>
     </div>
   </div>

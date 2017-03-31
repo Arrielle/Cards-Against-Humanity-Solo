@@ -16,6 +16,7 @@ exports.initGame = function(sio, socket){
   gameSocket.on('changePlayerView', changePlayerView);
   gameSocket.on('findPlayersCards', findPlayersCards);
   gameSocket.on('setCzar', setCzar);
+  gameSocket.on('selectRoundWinner', selectRoundWinner);
   // gameSocket.on('cardsToJudge', cardsToJudge);
   // gameSocket.on('playerHideButton', changePlayerStatus);
   gameSocket.on('sendCardsToCzar', sendCardsToServer);
@@ -188,45 +189,48 @@ function sendCardsToServer(playerCards, playerObject){
     whiteCardsToSend(playerCards, playerObject);
     //this updates the czar view if everyone has played.
     if (game.cardsToJudge.length == 1){ //HARD CODED
-        var cardsToJudge = game.cardsToJudge;
-        var gameId = game.gameId;
-        var player = data;
-        io.sockets.in(gameId).emit('czarCards', cardsToJudge);
+      var cardsToJudge = game.cardsToJudge;
+      var gameId = game.gameId;
+      var player = data;
+      io.sockets.in(gameId).emit('czarCards', cardsToJudge);
       // socket.emit('cardsToJudge', self.host);
       //clear any placeholder cards
     }
   }
-  }
+}
 
-  //~.:------------>TIES PLAYER TO CARD THAT WAS SENT<------------:.~//
-  function whiteCardsToSend(playerCards, playerObject){
-    for (var i = 0; i < game.players.length; i++) { //loops through the players (server)
-      if (game.players[i].mySocketId == playerObject.mySocketId) { //finds the correct socket/player
-        // console.log('beforesplice', playerObject.cardsInHand.length);
-        for (var j = 0; j < playerCards.length; j++) { //loops through the players cards
-          if(playerCards[j].selected){ //finds the ones that have been selected
-            game.cardsToJudge.push(playerCards[j]); //adds the card to the cards to judge array.
-            playerCards.splice(j, 1); //also splice the same card from the game.players.cardsInHand
-            game.players[i].cardsInHand.splice(j, 1);
-            playerObject.cardsInHand = game.players[i].cardsInHand;
-            // console.log('aftersplice', playerObject.cardsInHand.length);
-            io.to(playerObject.mySocketId).emit('updatePlayerView', playerObject);
-          }//ends if
-        }//ends for
-      }
-    }
-    shuffleArray(game.cardsToJudge); //shuffles the array so that the czar doesn't know who the card came from.
-  }//ends function
-
-  //~.:------------>DETERMINES HOW MANY CARDS A PLAYER HAS SELECTED TO SEND TO THE CZAR<------------:.~//
-  function checkCardsInHand(cardsInHand){
-    var numberOfSelectedCards = 0; //initialized numberOfSelctedCards to 0
-    for (var i = 0; i < cardsInHand.length; i++) { //checks to see how many 'numberOfSelectedCards' there really are
-    if(cardsInHand[i].selected){
-      numberOfSelectedCards++
+//~.:------------>TIES PLAYER TO CARD THAT WAS SENT<------------:.~//
+function whiteCardsToSend(playerCards, playerObject){
+  for (var i = 0; i < game.players.length; i++) { //loops through the players (server)
+    if (game.players[i].mySocketId == playerObject.mySocketId) { //finds the correct socket/player
+      // console.log('beforesplice', playerObject.cardsInHand.length);
+      for (var j = 0; j < playerCards.length; j++) { //loops through the players cards
+        if(playerCards[j].selected){ //finds the ones that have been selected
+          game.cardsToJudge.push(playerCards[j]); //adds the card to the cards to judge array.
+          playerCards.splice(j, 1); //also splice the same card from the game.players.cardsInHand
+          game.players[i].cardsInHand.splice(j, 1);
+          playerObject.cardsInHand = game.players[i].cardsInHand;
+          // console.log('aftersplice', playerObject.cardsInHand.length);
+          io.to(playerObject.mySocketId).emit('updatePlayerView', playerObject);
+        }//ends if
+      }//ends for
     }
   }
-  return numberOfSelectedCards;
+  for (var i = 0; i < game.cardsToJudge.length; i++) {//changes all cards in the array from selected to unselected.
+    game.cardsToJudge[i].selected = false;
+  }//ends for
+  shuffleArray(game.cardsToJudge); //shuffles the array so that the czar doesn't know who the card came from.
+}//ends function
+
+//~.:------------>DETERMINES HOW MANY CARDS A PLAYER HAS SELECTED TO SEND TO THE CZAR<------------:.~//
+function checkCardsInHand(cardsInHand){
+  var numberOfSelectedCards = 0; //initialized numberOfSelctedCards to 0
+  for (var i = 0; i < cardsInHand.length; i++) { //checks to see how many 'numberOfSelectedCards' there really are
+  if(cardsInHand[i].selected){
+    numberOfSelectedCards++
+  }
+}
+return numberOfSelectedCards;
 }
 
 //~.:------------>SHUFFLE THE WHITE CARDS SO THE CZAR DOESN'T KNOW WHO SENT THEM<------------:.~//
@@ -248,14 +252,20 @@ function shuffleArray(array) {
 ******************************** */
 
 function setCzar(playersArray){
-  console.log('PLAYERS ARRAY', playersArray);
+  console.log('HEYBITCH', playersArray);
   if (playersArray[0].isCzar){
     playersArray[0].isCzar = false;
     playersArray[1].isCzar = true;
+    game.players[0].isCzar = false;
+    game.players[1].isCzar = true;
+
   } else if (playersArray[1].isCzar){
     playersArray[1].isCzar = false;
     // player[2].isCzar = true;
     playersArray[0].isCzar = true;
+    game.players[1].isCzar = false;
+    game.players[0].isCzar = true;
+
   }
   // else if (player[2].isCzar){
   //   player[2].isCzar = false;
@@ -266,7 +276,11 @@ function setCzar(playersArray){
   // }
   else {
     playersArray[0].isCzar = true;
+    game.players[0].isCzar = true;
+
   }
+  console.log('PLAYERS ARRAY AFTER', playersArray);
+
   // loop through the players and find the socket as well as their czar status.
   // Emit the status to the right socket.
   for (var i = 0; i < playersArray.length; i++) {
@@ -277,15 +291,70 @@ function setCzar(playersArray){
       io.to(playerSocketId).emit('showCzarView', false)
     }
   }
+
 }
 
-// function cardsToJudge(data){
-//   var cardsToJudge = data.cardsToJudge;
-//   var gameId = game.gameId;
-//   var player = data;
-//   io.sockets.in(gameId).emit('czarCards', cardsToJudge);
-// }
 
-// function changePlayerStatus(data){
-//   io.to(data.mySocketId).emit('updatePlayerView', data);
-// }
+
+function selectRoundWinner(cardsToJudge){
+  //  NEED THE DATABASE ID
+  //  Go through the array of cards and make sure that one of them is selected
+  for (var i = 0; i < cardsToJudge.length; i++) {
+    if(cardsToJudge[i].selected){
+      setRoundWinner(cardsToJudge); //finds who won the round and awards them points
+      roundWinner = game.players[roundWinnerIndex];
+      //ALERT USERS WHO WON... THEN RESET EVERYTHING
+      checkIfGameOver(); //checks to see if anyone has 10 points yet
+      newRound(); //sets up for a new round
+      console.log('game should be on round two with no cards to judge', game);
+      io.sockets.in(game.gameId).emit('newRound', game);
+
+      // drawBlackCard(self.host.databaseId); //draws a new black card NEED DATABASE ID
+      // drawCards(self.host.databaseId); // draws white cards NEED DATABASE ID
+      // setCzar(self.host.players); //needs to set current czar to nothing and then set the next czar
+      //UPDATE ALL VIEWS
+
+      //need to alert host that the player has scored.
+    }
+  }
+}
+
+function setRoundWinner(cardsToJudge){
+  //loops through the array of cards to judge
+  for (var i = 0; i < cardsToJudge.length; i++) { //loop through cards to judge
+    //if the card is selected, it's the winner
+    if(cardsToJudge[i].selected){ //find the card in the array that is selected
+      //find the player who sent the card and give them points.
+      var winner = cardsToJudge[i].playerName; //find the user who sent that card, and set them to winner.
+      for (var i = 0; i < game.players.length; i++) { //loop through the player array
+        if(game.players[i].playerName == winner){ //whichever player is the winner
+          game.players[i].playerScore++; //gets a point
+          return roundWinnerIndex = i;
+        }//ends if
+      }//ends for
+    }//ends if
+  }//ends for
+}//ends function
+
+function checkIfGameOver(){
+  for (var i = 0; i < game.players.length; i++) {
+    if (game.players[i].points >= game.pointsToWin){
+      game.winner = game.players[i].playerName;
+      game.isOver = true;
+    }
+  }
+  if(game.isOver){
+    for (var i = 0; i < game.players.length; i++) {
+      game.players[i].isCzar = false;
+      console.log('THE GAME IS OVER!');
+    }
+  }
+  console.log('GAME IS NOT OVER');
+}
+
+function newRound(){
+  if(!game.isOver){
+    game.currentRound++;
+    game.cardsToJudge = [];
+  }
+}

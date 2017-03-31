@@ -20,6 +20,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   socket.on('showCzarView', czarView);
   socket.on('czarCards', updateCzarView);
   socket.on('updatePlayerView', updatePlayerView);
+  socket.on('newRound', newRound);
   // socket.on('sendCardsToServer', sendCardsToServer)
 
   //*************************//
@@ -207,16 +208,10 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       //Draw a black card. A black card that has been drawn, cannot be drawn again.
       drawBlackCard(databaseId, players, game);
       drawCards(databaseId, players, game);
-      setCzar(players);
-
-
-      whatWillYouBe(game);
+      setCzar(game.players);
     });
   }
 
-  function whatWillYouBe(game){
-    socket.emit('newGameData', game);
-  }
 
   //****************************//
   //                            //
@@ -365,58 +360,6 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     socket.emit('sendCardsToCzar', playerCards, playerObject)
   }
 
-//   function sendCardsToServer(game, playerCards, playerObject){
-//     console.log('game.players', game.players);
-//     var numberOfSelectedCards = checkCardsInHand(playerCards);
-//     var cardsToPick = self.gameSetup.cardsToPick;  //finds out what the current rounds 'number of cards to pick' is set to
-//     if (numberOfSelectedCards == cardsToPick) {
-//       // nextPlayer(player); //sends white cards, and sets the next player.
-//       whiteCardsToSend(playerCards);
-//       //this updates the czar view if everyone has played.
-//       if (self.host.cardsToJudge.length == 1){
-//         socket.emit('cardsToJudge', self.host);
-//         //clear any placeholder cards
-//       }
-//       socket.emit('playerHideButton', playerObject);
-//     }
-//   }
-//
-//
-//
-// //~.:------------>TIES PLAYER TO CARD THAT WAS SENT<------------:.~//
-// function whiteCardsToSend(playerCards){
-//   for (var i = 0; i < playerCards.length; i++) { //loops through the players cards
-//     if(playerCards[i].selected){ //finds the ones that have been selected
-//       self.host.cardsToJudge.push(playerCards[i]); //adds the card to the cards to judge array.
-//       playerCards.splice(i, 1);
-//       for (var i = 0; i < self.host.cardsToJudge.length; i++) {//changes all cards in the array from selected to unselected.
-//         self.host.cardsToJudge[i].selected = false;
-//       }//ends for
-//     }//ends if
-//   }//ends for
-//   shuffleArray(self.host.cardsToJudge); //shuffles the array so that the czar doesn't know who the card came from.
-// }//ends function
-//
-// //~.:------------>SHUFFLE THE WHITE CARDS SO THE CZAR DOESN'T KNOW WHO SENT THEM<------------:.~//
-// function shuffleArray(array) {
-//   for (var i = array.length - 1; i > 0; i--) {
-//     var j = Math.floor(Math.random() * (i + 1));
-//     var temp = array[i];
-//     array[i] = array[j];
-//     array[j] = temp;
-//   }
-//   return array;
-// }
-
-//loop through self.host.cardsToJudge and find the username of people who have sent cardsToJudge
-
-// function checkIfPlayed(){
-//   for (var i = 0; i < self.host.cardsToJudge.length; i++) {
-//     var playerName = self.host.cardsToJudge[i].playerName
-//     socket.emit('checkIfPlayed', playerName);
-//   }
-// }
-
 //**********************//
 //                      //
 //    CZAR FUNCTIONS    //
@@ -425,6 +368,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
 //~.:------------>SETS THE CURRENT CZAR<------------:.~//
 //hard coded who czar is... NEED TO MAKE DYNAMIC
 function setCzar(players){
+  console.log('setCzar: ', players);
   socket.emit('setCzar', players);
 }
 //~.:------------>CHANGES THE CZAR VIEW<------------:.~//
@@ -438,7 +382,8 @@ function updateCzarView(data){
 }
 
 function cardsToJudgeUpdateView(data){
-  self.host.cardsToJudge = data;
+  self.cardsToJudge = data;
+  //need game here
 }
 
 function updatePlayerView(data){
@@ -467,24 +412,22 @@ function noCzar(){
 //                           //
 //***************************//
 
-self.selectRoundWinner = function(host){
-  console.log('WHAT IS IN HERE?!', self.host.players);
-  //  NEED THE DATABASE ID
-  //  Go through the array of cards and make sure that one of them is selected
-  for (var i = 0; i < self.host.cardsToJudge.length; i++) {
-    if(self.host.cardsToJudge[i].selected){
-      setRoundWinner(); //finds who won the round and awards them points
-      //ALERT USERS WHO WON... THEN RESET EVERYTHING
-      checkIfGameOver(); //checks to see if anyone has 10 points yet
-      newRound(); //sets up for a new round
-      // drawBlackCard(self.host.databaseId); //draws a new black card NEED DATABASE ID
-      // drawCards(self.host.databaseId); // draws white cards NEED DATABASE ID
-      // setCzar(self.host.players); //needs to set current czar to nothing and then set the next czar
-      //UPDATE ALL VIEWS
-      console.log(self.host.currentBlackCard.text);
-      console.log('HOST', self.host);
-    }
-  }
+self.selectRoundWinner = function(cardsToJudge){
+  //go to the server -> figure out who was
+  socket.emit('selectRoundWinner', cardsToJudge);
+}
+
+function newRound(game){
+  console.log('BEFORE RESEET atNewRound', game.players);
+
+  databaseId = game.databaseId;
+  players = game.players;
+  setCzar(players);
+
+  console.log('atNewRound', game.players);
+
+  // drawBlackCard(databaseId, players, game);
+  // drawCards(databaseId, players, game);
 }
 
 function setRoundWinner(){
@@ -503,29 +446,6 @@ function setRoundWinner(){
   }//ends for
 }//ends function
 
-function checkIfGameOver(){
-  for (var i = 0; i < self.host.players.length; i++) {
-    if (self.host.players[i].points >= self.host.pointsToWin){
-      self.host.winner = self.host.players[i].playerName;
-      self.host.isOver = true;
-    }
-  }
-  if(self.host.isOver){
-    for (var i = 0; i < self.host.players.length; i++) {
-      self.host.players[i].isCzar = false;
-      console.log('THE GAME IS OVER!');
-    }
-  }
-  console.log('GAME IS NOT OVER');
-}
-
-function newRound(){
-  if(!self.host.isOver){
-    self.host.currentRound++;
-    self.host.currentBlackCard = null;
-    self.host.cardsToJudge = [];
-  }
-}
 
 //loop through all players, if every player who is not czar hasPlayed, display the button on the czar view
 //
