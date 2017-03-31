@@ -171,7 +171,7 @@ function findPlayersCards(playersObject){
     var cards = playersObject[i].cardsInHand;
     //'this' players socketId
     var playerSocketId = playersObject[i].mySocketId;
-    //'this' players playerName
+    //'this' players playerNameupdatePlayerView
     var name = playersObject[i].playerName
     //emit these cards specifically to this player
     io.to(playerSocketId).emit('dealWhiteCards', {playersObject: playersObject[i]});
@@ -181,6 +181,7 @@ function findPlayersCards(playersObject){
 
 
 function sendCardsToServer(playerCards, playerObject){
+  game.databaseId = playerCards[0].databaseId;
   console.log('PlayerCards', playerCards, 'playerObject', playerObject);
   var numberOfSelectedCards = checkCardsInHand(playerCards);
   var cardsToPick = game.cardsToPick;  //finds out what the current rounds 'number of cards to pick' is set to
@@ -212,7 +213,7 @@ function whiteCardsToSend(playerCards, playerObject){
           game.players[i].cardsInHand.splice(j, 1);
           playerObject.cardsInHand = game.players[i].cardsInHand;
           // console.log('aftersplice', playerObject.cardsInHand.length);
-          io.to(playerObject.mySocketId).emit('updatePlayerView', playerObject);
+          io.to(playerObject.mySocketId).emit('updatePlayerView', true, playerObject);
         }//ends if
       }//ends for
     }
@@ -281,6 +282,8 @@ function selectRoundWinner(cardsToJudge){
       //ALERT USERS WHO WON... THEN RESET EVERYTHING
       checkIfGameOver(); //checks to see if anyone has 10 points yet
       newRound(); //sets up for a new round
+      changeHostView();
+
       console.log('game should be on round two with no cards to judge', game);
       io.sockets.in(game.gameId).emit('newRound', game);
 
@@ -331,5 +334,7 @@ function newRound(){
   if(!game.isOver){
     game.currentRound++;
     game.cardsToJudge = [];
+    io.sockets.in(game.gameId).emit('czarCards', game.cardsToJudge);
+    io.sockets.in(game.gameId).emit('updatePlayerView', false, game.players);
   }
 }

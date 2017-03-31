@@ -302,6 +302,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   }
   // ~.:------------>ADD CARDS TO THE PLAYER OBJECT<------------:.~//
   function addCardsToHand(numberCardsToDraw, deck, player, databaseId, game) {
+    console.log('database id????', databaseId);
     var playerName = player.playerName;
     for (i = 0; i < numberCardsToDraw; i++) {
       var whiteIndex = Math.floor(Math.random() * deck.length); //selects a white card from the deck at random
@@ -415,14 +416,14 @@ function cardsToJudgeUpdateView(data){
   //need game here
 }
 
-function updatePlayerView(data){
-  $scope.$apply(playerHasPlayed(data));
+function updatePlayerView(data, playerObject){
+  $scope.$apply(playerHasPlayed(data, playerObject));
 }
 
-function playerHasPlayed(data){
-  console.log('here is some epic data', data);
-  self.playerObject.playersObject.cardsInHand = data.cardsInHand;
-  self.playerDone = true;
+function playerHasPlayed(data, playerObject){
+  console.log('here is some epic data', playerObject);
+  self.playerObject.playersObject.cardsInHand = playerObject.cardsInHand;
+  self.playerDone = data;
 }
 
 //Sets all players isCzar to false
@@ -447,13 +448,12 @@ self.selectRoundWinner = function(cardsToJudge){
 }
 
 function newRound(game){
-  console.log('BEFORE RESEET atNewRound', game.players);
-
   databaseId = game.databaseId;
   players = game.players;
-  setCzar(game);
-
-  console.log('AFTER atNewRound', game.players);
+  console.log('ALS;DKJF;ALSDKJF;ALSDJFK', game);
+  drawBlackCard(databaseId, players, game); //good.
+  drawCards(databaseId, players, game);
+  setCzar(game); //needs work.
 
   // drawBlackCard(databaseId, players, game);
   // drawCards(databaseId, players, game);
