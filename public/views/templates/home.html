@@ -4,10 +4,23 @@
 //*********************//
 -->
 <div ng-hide="hc.isStarted || hc.playerJoining || hc.playerGameTemplate || hc.hostGameTemplate">
-  <div class = "padding">
-    <button ng-click="hc.onCreateClick()" type="button" name="button">Create a New Game</button>
-    <button ng-click="hc.playerJoinView()" type="button" name="button">Join a Game</button>
+  <div id="gameInit" class = "row text-center content">
+    <div class="col-xs-0 col-md-2"></div>
+    <div class = "col-xs-12 col-md-4">
+      <button ng-click="hc.onCreateClick()" class="btn btn-primary btn-lg outline" type="button" name="button">Create a New Game</button>
+    </div>
+    <div class="col-xs-0 col-md-2"></div>
+    <div class="col-xs-0 col-md-2"></div>
+    <div class = "col-xs-12 col-md-4">
+      <button ng-click="hc.playerJoinView()" class="btn btn-primary btn-lg outline" type="button" name="button">Join a Game</button>
+    </div>
+    <div class="col-xs-0 col-md-2"></div>
   </div>
+
+  <div id="footer_container">
+    <div id="footer">
+    </div>
+</div>
 </div>
 
 <!--
@@ -16,39 +29,50 @@
 //***************************//
 -->
 <div ng-show ="hc.playerJoining">
-  <input ng-model="hc.playerName" type="text" name="" placeholder="Player Name" value=""/>
-  <input ng-model="hc.gameId" type="text" name="" placeholder="Game ID" value=""/><br>
-  <button ng-click="hc.onPlayerStartClick()" type="button" name="button">Click Start</button>
+  <div class ="form-group content text-center row">
+    <div class = "col-xs-0 col-md-3"></div>
+    <div class = "col-xs-12 col-md-6">
+    <input ng-model="hc.playerName" type="text" name="" placeholder="Player Name" value=""/>
+    <input ng-model="hc.gameId" type="text" name="" placeholder="Game ID" value=""/><br>
+    <button ng-click="hc.onPlayerStartClick()" class="btn btn-primary btn-lg outline" type="button" name="button">Join!</button>
+    <div id="playerWaitingMessage"></div>
+  </div>
+  <div class = "col-xs-0 col-md-3"></div>
+
+  </div>
   <!-- This is where I'll alert the player that they are waiting for more people before they can start the game -->
-  <div id="playerWaitingMessage"></div>
+  <div id="footer_container">
+    <div id="footer">
+    </div>
+</div>
 </div>
 <!--
 //*****************************//
 //   PLAYER IN GAME TEMPLATE   //    || This is the player view when game starts.
 //*****************************//
 -->
-<div ng-show="hc.playerGameTemplate">
+<div ng-show="hc.playerGameTemplate" class="content">
   <h2 ng-model="hc.playerObject.playersObject.cardsInHand">{{hc.playerObject.playersObject.playerName}}</h2> <!-- replace with player name! -->
   <div class = "playerView">
     <!-- <div ng-model="gc.playerArray" ng-show="gc.playerArray[0].currentPlayer" > -->
-      <div ng-show="!hc.playerIsCzar" class = "nonCzar">
-        <h3>Pick the card you'd like to send to the Czar.</h3>
-        <div class="card" ng-repeat="card in hc.playerObject.playersObject.cardsInHand" ng-class="{'card':true,'selectedCard' : card.selected}" ng-click="hc.selectCard(card, hc.playerObject.playersObject.cardsInHand, hc.playerObject.playersObject.playerName, hc.playerObject.playersObject)">
+    <div ng-show="!hc.playerIsCzar" class = "nonCzar">
+      <h3>Pick the card you'd like to send to the Czar.</h3>
+      <div class="card" ng-repeat="card in hc.playerObject.playersObject.cardsInHand" ng-class="{'card':true,'selectedCard' : card.selected}" ng-click="hc.selectCard(card, hc.playerObject.playersObject.cardsInHand, hc.playerObject.playersObject.playerName, hc.playerObject.playersObject)">
         <!-- <div class="card" ng-repeat="card in hc.players.cardsInHand" ng-class="{'card':true,'selectedCard' : card.selected}" ng-click="gc.selectCard(card, gc.playerArray[0].currentCards)"> -->
-          {{card.text}}
-        </div>
-        <button ng-hide="hc.playerDone" ng-click="hc.sendCardsToCzar(hc.playerObject.playersObject.cardsInHand, hc.playerObject.playersObject)" type="button" name="button">Send Card(s)</button>
-        <button ng-show="hc.playerDone" type="button" name="button">Waiting on Other Players</button>
+        {{card.text}}
       </div>
-      <div ng-show="hc.playerIsCzar" class = "czar">
-        <h2>You are CZAR!</h2>
-        <div class="card" ng-repeat="card in hc.cardsToJudge" ng-class="{'card':true,'selectedCard' : card.selected}" ng-click="hc.selectCardCzar(card, hc.cardsToJudge)">
-          {{card.text}}
-        </div>
-        <button ng-click="hc.selectRoundWinner(hc.cardsToJudge)" type="button" name="button">Declare Winner</button>
+      <button ng-hide="hc.playerDone" ng-click="hc.sendCardsToCzar(hc.playerObject.playersObject.cardsInHand, hc.playerObject.playersObject)" type="button" name="button">Send Card(s)</button>
+      <button ng-show="hc.playerDone" class="btn btn-primary btn-lg outline" type="button" name="button">Waiting on Other Players</button>
+    </div>
+    <div ng-show="hc.playerIsCzar" class = "czar">
+      <h2>You are CZAR!</h2>
+      <div class="card" ng-repeat="card in hc.cardsToJudge" ng-class="{'card':true,'selectedCard' : card.selected}" ng-click="hc.selectCardCzar(card, hc.cardsToJudge)">
+        {{card.text}}
       </div>
+      <button ng-click="hc.selectRoundWinner(hc.cardsToJudge)" class="btn btn-primary btn-lg outline" type="button" name="button">Declare Winner</button>
     </div>
   </div>
+</div>
 
 </div>
 
@@ -57,12 +81,21 @@
 //   GAME INITIALIZE TEMPLATE    //    || This is view when Create Game is clicked.
 //*******************************//
 -->
-<div ng-show="hc.isStarted && !hc.gameTemplate">
+<div ng-show="hc.isStarted && !hc.gameTemplate" class="content contained">
+  <div class="col-xs-0 col-md-2"></div>
+  <div class = "col-xs-12 col-md-8">
   <h2>Open this site on your mobile device {{hc.link}}</h2>
   <h2>Here is your game ID: {{hc.gameId}}</h2>
+  <div id="playersWaiting"></div>
+
+</div>
+<div class="col-xs-0 col-md-2"></div>
   <!-- Below is where I'll show who has joined the room -->
   <!-- Consider using angular to ng-repeat through players in room. Currently using Jquery  -->
-  <div id="playersWaiting"></div>
+  <div id="footer_container">
+    <div id="footer">
+    </div>
+</div>
 </div>
 
 <!--
@@ -73,7 +106,7 @@
 
 
 <!-- Player Scores - Needs to Change into an NG-REPEAT-->
-<div ng-show="hc.hostGameTemplate" class = "row">
+<div ng-show="hc.hostGameTemplate" class = "content row">
   <div id = "playerScores" ng-repeat="player in hc.players">
     <div class = "col-xs-3 row">
       <div class = "col-xs-6 col-md-3">

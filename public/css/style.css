@@ -2,26 +2,22 @@
     position: relative;
     min-height: 100%;
 }*/
+.content{
+  margin-top: 220px;
+}
+
+.jumbotron{
+background-color: transparent !important;
+border-bottom: 2px solid black;
+}
 
 .padding{
   padding: 80px;
 }
 
-body { font: 13px Helvetica, Arial; }
-
-    form{
-      background: #000;
-      padding: 3px;
-      /*position: fixed;*/
-      bottom: 0;
-      width: 100%;
-    }
-
-form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
-form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
-#messages { list-style-type: none; margin: 0; padding: 0; }
-#messages li { padding: 5px 10px; }
-#messages li:nth-child(odd) { background: #eee; }
+body {
+  font: 13px Helvetica, Arial;
+ }
 
 #title{
   font-size: 50px;
@@ -42,9 +38,9 @@ form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 
  margin-top: 50px;
 }
 
-#header {
+/*#header {
   border-color: 1px solid white;
-}
+}*/
 
 #activeBlackCard {
   height: 224px;
@@ -115,20 +111,33 @@ form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 
   transform: translate(0, -5px);
 
 }
+
 input {
-  height: 45px;
-  width: 200px;
+  height: 50px;
+  width: 75%;
+  border: 1px solid grey;
 }
 
-button {
-  margin-left: 30px;
-  padding: 10px;
-  width: 160px;
+/*.btn{
+  width: 75%;
+  align: center;
+  margin-top: 10px;
+  background-color: pink;
+  font-weight: bold;
+  border: 1px solid black !important;
+}*/
+
+/*button {*/
+  /*margin-left: 30px;
+  padding: 10px;*/
+  /*height: 200px;
+  font-size: 20px;
+  width: 100%;
   background-color: white;
   font-weight: bold;
   border: 1px solid black;
-}
-
+}*/
+/*
 button:hover{
   margin-left: 30px;
   padding: 10px;
@@ -149,4 +158,76 @@ button:active{
   border: 1px solid white;
   transform: translate(0, 5px);
 
+}*/
+
+
+.btn-lg {
+  width: 75%;
+  margin-top: 5px;
+  font-size: 18px;
+  line-height: 1.33;
+  border-radius: 6px;
+}
+
+.btn-primary {
+  color: #fff;
+  background-color: black;
+  border-color: black;
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active,
+.btn-primary.active,
+.open .dropdown-toggle.btn-primary {
+  color: #fff;
+  background-color: black !important;
+  color: white !important;
+  border-color: black;
+}
+
+/***********************
+  OUTLINE BUTTONS
+************************/
+
+.btn.outline {
+    background: none;
+    padding: 12px 22px;
+}
+.btn-primary.outline {
+    border: 2px solid black;
+    color: black;
+}
+.btn-primary.outline:hover, .btn-primary.outline:focus, .btn-primary.outline:active, .btn-primary.outline.active, .open > .dropdown-toggle.btn-primary {
+    color: black;
+    border-color: black;
+}
+.btn-primary.outline:active, .btn-primary.outline.active {
+    border-color: black;
+    color: black;
+    box-shadow: none;
+}
+
+/***********************
+  CUSTON BTN VALUES
+************************/
+
+.btn {
+    padding: 14px 24px;
+    border: 0 none;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+.btn:focus, .btn:active:focus, .btn.active:focus {
+    outline: 0 none;
+}
+#header_container { background:black; color: white; height:150px; left:0; position:fixed; width:100%; top:0; }
+#header{ line-height:60px; margin:0 auto; padding-left: 40px;}
+
+#footer_container { background:black; border:1px solid #666; bottom:0; height:60px; left:0; position:fixed; width:100%; }
+#footer { line-height:60px; margin:0 auto; width:940px; text-align:center; }
+
+#playerWaitingMessage {
+  margin-top: 30px;
 }
