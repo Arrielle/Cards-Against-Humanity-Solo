@@ -30,7 +30,7 @@ if(process.env.DATABASE_URL) {
 var pool = new pg.Pool(config);
 
 router.post('/newPlayer', function(req, res) {
-  console.log('newPlayer post: ', req.body);
+  // console.log('newPlayer post: ', req.body);
   var newPlayerObject = req.body;
 
   // db query
@@ -40,31 +40,31 @@ router.post('/newPlayer', function(req, res) {
       res.sendStatus(500);
     }else{
       client.query('INSERT INTO players_in_game(player_name, room_id, mySocket_id) VALUES ($1, $2, $3);',
-      [newPlayerObject.player_name, newPlayerObject.roomId, newPlayerObject.mySocketId], function(err, result) {
+      [newPlayerObject.playerName, newPlayerObject.roomId, newPlayerObject.mySocketId], function(err, result) {
         done();
         if(err){
           console.log(err);
           res.sendStatus(500);
         }else{
           res.sendStatus(201);
-          console.log('result post', result.rows);
+          // console.log('result post', result.rows);
         }
       });
     }
   });
 });
 
-router.post('/findGame', function(req,res){
-  var cardObject = req.body;
-  console.log('here is the post body -> ', req.body);
+router.post('/findAllPlayers', function(req,res){
+  var gameId = req.body.gameId;
+  // console.log('here is the post body -> ', req.body.gameId);
   // console.log('here is the post id', req.body.gameId);
   pool.connect(function(err, client, done) {
     if(err){
       console.log(err);
       res.sendStatus(500);
     }else{
-      client.query('SELECT game_init.id FROM game_init right OUTER JOIN players_in_game ON game_init.room_id = players_in_game.room_id WHERE game_init.room_id = $1 LIMIT 1;',
-        [cardObject.roomId], function(err, result) {
+      client.query('SELECT * FROM players_in_game WHERE game_id = $1;',
+        [gameId], function(err, result) {
           done();
           if(err){
             console.log(err);
@@ -77,7 +77,29 @@ router.post('/findGame', function(req,res){
   });
 });
 
-
+//SETS THE GAME ID EQUAL TO THE DATABASE ID
+router.put('/addPlayersToGame', function(req,res){
+  var roomId = req.body.roomId;
+  console.log('here is the players post body -> ', roomId);
+  // console.log('here is the post id', req.body.gameId);
+  pool.connect(function(err, client, done) {
+    if(err){
+      console.log(err);
+      res.sendStatus(500);
+    }else{
+      client.query('UPDATE players_in_game AS p SET game_id = g.id FROM game_init AS g WHERE p.room_id = g.room_id AND g.room_id = $1 RETURNING g.id;',
+        [roomId], function(err, result) {
+          done();
+          if(err){
+            console.log(err);
+            res.sendStatus(500);
+          }else{
+            res.status(201).send(result.rows);
+          }
+      });
+    }
+  });
+});
 
 
 

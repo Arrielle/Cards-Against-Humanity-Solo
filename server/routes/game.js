@@ -80,4 +80,28 @@ router.post('/initGame', function(req, res) {
   });
 });
 
+router.post('/findGame', function(req,res){
+  var gameId = req.body.gameId;
+  console.log('post at find game -> ', req.body);
+  // console.log('here is the post body -> ', req.body);
+  // console.log('here is the post id', req.body.gameId);
+  pool.connect(function(err, client, done) {
+    if(err){
+      console.log(err);
+      res.sendStatus(500);
+    }else{
+      client.query('SELECT * FROM game_init LEFT OUTER JOIN players_in_game ON game_init.id = players_in_game.game_id WHERE game_id = $1;',
+        [gameId], function(err, result) {
+          done();
+          if(err){
+            console.log(err);
+            res.sendStatus(501);
+          }else{
+            res.status(201).send(result.rows);
+          }
+      });
+    }
+  });
+});
+
 module.exports = router;

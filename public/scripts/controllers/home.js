@@ -131,19 +131,9 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       gameId : self.gameId,
       playerName : self.playerName,
     };
-
-    // Creating a dynamic variable to use as the player array on the server.
-    // var t = 't';
-    // var four = '4';
-    // var taco = self.gameId.toString();
-    //
-    // eval('var ' + (t + four) + ' = ' + self.gameId.toString() + ';');
-    // var dynamicObject = {
-    //   t4: [],
-    // }
-    // console.log(t4);
     socket.emit('playerJoinGame', data);
   }
+
 
   function postPlayer(player){
     playerObject = {
@@ -151,29 +141,112 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       mySocketId: player.mySocketId,
       playerName: player.playerName
     }
+    //THIS ADDS THE PLAYER TO THE PLAYERS TABLE
     $http({
       method: 'POST',
       url: '/newPlayer',
       data: playerObject
     }).then(function(response){
-      console.log('oh lord', response);
-      addPlayerToGame(playerObject);
+      updatePlayerInDatabase(playerObject);
+    });
+  }
+  //THIS JOINS THE PLAYERS TABLE WITH THE GAME_INIT TABLE AND SETS THE GAME ID
+  function updatePlayerInDatabase(playerObject){
+    $http({
+      method: 'PUT',
+      url: '/addPlayersToGame',
+      data: playerObject
+    }).then(function(response){
+      gameId = response.data[0].id;
+      findGameInformation(gameId);
     });
   }
 
-  function addPlayerToGame(playerObject){
+  function findGameInformation(gameId){
+    gameIdObject = {gameId: gameId};
+    console.log('object?', gameIdObject.gameId);
+    //FINDS ALL PERTINENT GAME INFORMATION
     $http({
       method: 'POST',
-      url: '/findGame',
-      data: playerObject
+      url: '/game/findGame',
+      data: gameIdObject
     }).then(function(response){
-      gameId = response.data["0"].id;
-      //draw white cards
-      //draw black card
-      //alert clients to new views.
-      //make sure first round setup is over.
-
+      console.log('RESPONSE AT GAME INFORMATION', response);
+      gameSettings = {
+        gameId: response.data[0].id,
+        roomId: response.data[0].room_id,
+        hostSocketId: response.data[0].hostsocket_id,
+        currentBlackCard: response.data[0].currentblackcard_id,
+        whiteCardsRequired: response.data[0].whitecardsrequired,
+        cardsToPick: response.data[0].cardstopick,
+        currentRound: response.data[0].currentround,
+        pointsToWin: response.data[0].pointstowin,
+        isStarted: response.data[0].isstarted,
+        isOver: response.data[0].isover,
+      }
+      console.log('GAME SETTINGS?', gameSettings);
     });
+  }
+
+  // function addPlayersToGame(playerObject, gameSettings){
+  //   //give the player object the game id so that they can be added to the correct game.
+  //   playerObject.gameId = gameSettings.gameId;
+  //   $http({
+  //     method: 'PUT',
+  //     url: '/addPlayersToGame',
+  //     data: playerObject
+  //   }).then(function(response){
+  //     console.log('dont know what this is...', response.data);
+  //   });
+  // }
+
+  // function addPlayersToGameArray(gameId, hostId, whiteCardDeck){
+  //   objectToSend = {gameId: gameId}; //I need to send the database ID to find the players in THIS game.
+  //   $http({
+  //     method: 'POST',
+  //     url: '/findAllPlayers',
+  //     data: playerObject
+  //   }).then(function(response){
+  //     console.log('This should be the players array', response);
+  //     // gameId = response.data[0].id;
+  //     // hostId = response.data[0].hostsocket_id;
+  //     //find all players and push them to an array.
+  //         //send player array to the server with the cards.
+  //     //draw black card and emit to the host.
+  //     //alert clients to new views.
+  //     //make sure first round setup is over.
+  //
+  //   });
+  // }
+
+  function drawWhiteCardDeck(gameId, hostId){ //Give this function the player array
+    objectToSend = {gameId: gameId}; //I need to send the database ID
+    $http({
+      method: 'POST',
+      url: '/allWhiteCards',
+      data: objectToSend //database id object
+    }).then(function(response){
+      var whiteCardDeck = response.data; //this is the shuffled deck of white cards
+
+      // addPlayersToGameArray(gameId, hostId, whiteCardDeck)
+    });
+  }
+
+  function addCardsToHand(numberCardsToDraw, deck, player, databaseId, game) {
+    console.log('database id????', databaseId);
+    var playerName = player.playerName;
+    for (i = 0; i < numberCardsToDraw; i++) {
+      var whiteIndex = Math.floor(Math.random() * deck.length); //selects a white card from the deck at random
+      player.cardsInHand.push(deck[whiteIndex]); //pushes the random card into the players hand
+      deck.splice(whiteIndex, 1); //Removes the random card from the shuffled deck.
+    }
+    for (var i = 0; i < player.cardsInHand.length; i++) {
+      player.cardsInHand[i].databaseId = databaseId;
+      player.cardsInHand[i].gameId = game.gameId;
+      player.cardsInHand[i].playerName = player.playerName;
+      player.cardsInHand[i].cardsToPick = game.cardsToPick;
+    }
+    socket.emit('findPlayersCards', game.players);
   }
 
   //When a player clicks Join a Game the Join Game view is displayed.
