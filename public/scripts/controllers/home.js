@@ -100,6 +100,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       databaseId = response.data[0].id;
       console.log('DatabaseId', databaseId);
       gameInitView(data);
+      //draw black card?
     });
   }
   //Shows the Game Init View
@@ -150,15 +151,29 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       mySocketId: player.mySocketId,
       playerName: player.playerName
     }
-    // $http({
-    //   method: 'POST',
-    //   url: '/game/newPlayer',
-    //   data: gameIdObject
-    // }).then(function(response){
-    //   databaseId = response.data[0].id;
-    //   game.databaseId = response.data[0].id;
-    //   //Draw a black card. A black card that has been drawn, cannot be drawn again.
-    // });
+    $http({
+      method: 'POST',
+      url: '/newPlayer',
+      data: playerObject
+    }).then(function(response){
+      console.log('oh lord', response);
+      addPlayerToGame(playerObject);
+    });
+  }
+
+  function addPlayerToGame(playerObject){
+    $http({
+      method: 'POST',
+      url: '/findGame',
+      data: playerObject
+    }).then(function(response){
+      gameId = response.data["0"].id;
+      //draw white cards
+      //draw black card
+      //alert clients to new views.
+      //make sure first round setup is over.
+
+    });
   }
 
   //When a player clicks Join a Game the Join Game view is displayed.

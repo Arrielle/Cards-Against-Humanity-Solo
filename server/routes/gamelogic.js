@@ -285,15 +285,15 @@ function shuffleArray(array) {
 
 
 function findCzar(playersArray){
-  console.log('HEY THERE - players array in findCzar server', playersArray);
+  // console.log('HEY THERE - players array in findCzar server', playersArray);
 
   for (var i = 0; i < playersArray.length; i++) {
     playerSocketId = playersArray[i].mySocketId;
     if(playersArray[i].isCzar){
-      console.log('i czar', i);
+      // console.log('i czar', i);
       io.to(playerSocketId).emit('showCzarView', true);
     } else if (!playersArray[i].isCzar){
-      console.log('i NOT czar', i);
+      // console.log('i NOT czar', i);
       io.to(playerSocketId).emit('showCzarView', false)
     }
   }

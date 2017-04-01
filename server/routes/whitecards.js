@@ -50,6 +50,8 @@ router.post('/allWhiteCards', function(req,res){
             res.sendStatus(500);
           }else{
             res.status(201).send(result.rows);
+            // console.log('white cards', result.rows);
+
           }
       });
     }

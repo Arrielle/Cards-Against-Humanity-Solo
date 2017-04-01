@@ -13,6 +13,7 @@ var cah = require('./routes/gamelogic');
 var game = require('./routes/game');
 var blackcards = require('./routes/blackcards');
 var whitecards = require('./routes/whitecards');
+var players = require('./routes/players');
 
 
 // Serve index file
@@ -36,6 +37,8 @@ io.sockets.on('connection', function (socket) {
 app.use('/game', game);
 app.use('/', blackcards);
 app.use('/', whitecards);
+app.use('/', players);
+
 
 // Spin up server
 http.listen(port, function(){

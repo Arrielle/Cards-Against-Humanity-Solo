@@ -55,17 +55,6 @@ router.post('/newGame', function(req, res) {
   });
 });
 
-// gameObject = {
-//   roomId: data.gameId,
-//   hostSocketId: data.hostSocketId,
-//   currentBlackCard: null,
-//   cardsToPick: 1,
-//   currentRound: 1,
-//   pointsToWin: 10,
-//   isStarted: false,
-//   isOver: false
-// }
-
 router.post('/initGame', function(req, res) {
 
   var newGameObject = req.body;
@@ -84,7 +73,7 @@ router.post('/initGame', function(req, res) {
             res.sendStatus(500);
           }else{
             res.status(201).send(result.rows);
-            console.log('result post', result.rows);
+            console.log('Returning ID', result.rows);
           }
       });
     }
