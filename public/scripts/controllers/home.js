@@ -75,30 +75,16 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //                               //
   //*******************************//
 
-  //When the Create new game button is clicked on the DOM, hostCreateNewGame is sent to the server
-  //Which in turn emits newGameCreated back to the client
-  //Which then runs the onNewGameCreated function
-  //Which then spins up the new game information
   self.onCreateClick = function () {
-    console.log('Clicked "Create A Game"');
-    // data = {
-    //   gameData: self.host,
-    //   playerData: self.player
-    // }
     socket.emit('hostCreateNewGame');
   }
 
   function onNewGameCreated(data) {
-    //Data contains : gameId && hostSocketId
-    //$scope.$apply allows angular to see the results even though it's happening outside of angular (sockets).
-    //$apply() is used to execute an expression in angular from outside of the angular framework.
-    //Because we are calling into the angular framework we need to perform proper scope life cycle of exception handling, executing watches.
     $scope.$apply(gameInit(data));
   }
 
   function gameInit(data) {
-    console.log("Game started with ID: " + data.gameId + ' by host: ' + data.hostSocketId);
-    //shows game init view.
+    //Shows the Game Init View -
     self.isStarted = data.gameIsReady;
     self.gameId = data.gameId;
   }
@@ -108,13 +94,22 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //    Player Join    //
   //                   //
   //*******************//
-  self.gameId = null;
-  self.playerName = null;
-
 
   function error(data) {
     console.log('error?', data);
-    alert(data.message);
+
+    swal({
+      title: 'Oops...',
+      text: data.message,
+      confirmButtonColor: '#000',
+    });
+    //     swal(
+    //   'Oops...',
+    //   data.message,
+    //   'error',
+    //   confirmButtonColor: #000,
+    // )
+    // alert(data.message);
   }
 
   //player has clicked start

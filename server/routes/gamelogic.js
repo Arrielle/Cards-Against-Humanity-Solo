@@ -57,25 +57,34 @@ player = {
   isReady: false
 }
 
+
 /* ****************************
 *                             *
 *       HOST FUNCTIONS        *
 *                             *
 ******************************* */
 
+//search abc to find things I need to remove from my code; 
+
 var hostSocketId = null;
+function randomNumber(){
+  var randomNumber = ( Math.random() * 100000 ) | 0;
+  return randomNumber;
+}
 
 // The 'START' button was clicked and 'hostCreateNewGame' event occurred.
 function hostCreateNewGame() {
   // Create a unique Socket.IO Room
-  var thisGameId = ( Math.random() * 100000 ) | 0;
-  // Return the Room ID (gameId) and the socket ID (mySocketId) to the browser client
-  this.emit('newGameCreated', {gameId: thisGameId, hostSocketId: this.id, gameIsReady: true});
-  // console.log('Host has created a new game!');
-  // console.log('Game ID: ', thisGameId, 'Socket ID: ', this.id);
+  var thisGameId = randomNumber();
   // Join the Room and wait for the players
   this.join(thisGameId.toString());
-  game.hostSocketId = this.id;
+
+  myObj = {[this.id]: {gameId: thisGameId, hostSocketId: this.id, gameIsReady: true}}
+  gameObject = myObj[this.id];
+  // Return the Room ID (gameId) and the socket ID (mySocketId) to the browser client
+  this.emit('newGameCreated', gameObject);
+  game.hostSocketId = this.id;  //abc
+  console.log('Host Is Prepping Game: ', gameObject);
 };
 
 function hostPrepareGame(data) {
@@ -87,7 +96,6 @@ function hostPrepareGame(data) {
   };
   console.log('HOST PREP DATA BBY', data);
   beginNewGame();
-
 }
 
 function beginNewGame(data) {
@@ -137,7 +145,7 @@ function playerJoinGame(data) {
     game.players.push(data);
     //hard coded
     if (room.length == 3){
-      console.log('GAME IS READY TO START');
+      console.log('GAME IS READY TO START', room.sockets);
       //if the room is full, spin up the game.
       hostPrepareGame();
     }
