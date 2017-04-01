@@ -21,6 +21,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   socket.on('czarCards', updateCzarView);
   socket.on('updatePlayerView', updatePlayerView);
   socket.on('newRound', newRound);
+  socket.on('postPlayer', postPlayer);
   // socket.on('sendCardsToServer', sendCardsToServer)
 
   //*************************//
@@ -74,17 +75,35 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //    Host Join/Game Creation    //
   //                               //
   //*******************************//
-
+  //Emits Data to the Server and Spins up a New Socket Room
   self.onCreateClick = function () {
     socket.emit('hostCreateNewGame');
   }
-
-  function onNewGameCreated(data) {
-    $scope.$apply(gameInit(data));
+  //Object Constructor for New Games
+  function Game(gameId, hostSocketId){
+    this.roomId = gameId,
+    this.hostSocketId = hostSocketId
   }
-
-  function gameInit(data) {
-    //Shows the Game Init View -
+  //Post New Game to Database and Change Views
+  function onNewGameCreated(data) {
+    var newGame = new Game(data.gameId, data.hostSocketId);
+    initialPostToDatabase(newGame, data);
+  }
+  //Post New Game to Database
+  function initialPostToDatabase(gameObject, data){
+    console.log('trying to post', gameObject);
+    $http({
+      method: 'POST',
+      url: '/game/initGame',
+      data: gameObject
+    }).then(function(response){
+      databaseId = response.data[0].id;
+      console.log('DatabaseId', databaseId);
+      gameInitView(data);
+    });
+  }
+  //Shows the Game Init View
+  function gameInitView(data) {
     self.isStarted = data.gameIsReady;
     self.gameId = data.gameId;
   }
@@ -112,17 +131,34 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       playerName : self.playerName,
     };
 
-    //Creating a dynamic variable to use as the player array on the server.
-    var t = 't';
-    var four = '4';
-    var taco = self.gameId.toString();
+    // Creating a dynamic variable to use as the player array on the server.
+    // var t = 't';
+    // var four = '4';
+    // var taco = self.gameId.toString();
+    //
+    // eval('var ' + (t + four) + ' = ' + self.gameId.toString() + ';');
+    // var dynamicObject = {
+    //   t4: [],
+    // }
+    // console.log(t4);
+    socket.emit('playerJoinGame', data);
+  }
 
-    eval('var ' + (t + four) + ' = ' + self.gameId.toString() + ';');
-    var dynamicObject = {
-      t4: [],
+  function postPlayer(player){
+    playerObject = {
+      roomId: player.gameId,
+      mySocketId: player.mySocketId,
+      playerName: player.playerName
     }
-    console.log(t4);
-    socket.emit('playerJoinGame', data, dynamicObject);
+    // $http({
+    //   method: 'POST',
+    //   url: '/game/newPlayer',
+    //   data: gameIdObject
+    // }).then(function(response){
+    //   databaseId = response.data[0].id;
+    //   game.databaseId = response.data[0].id;
+    //   //Draw a black card. A black card that has been drawn, cannot be drawn again.
+    // });
   }
 
   //When a player clicks Join a Game the Join Game view is displayed.

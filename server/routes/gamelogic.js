@@ -57,7 +57,8 @@ player = {
   isReady: false
 }
 
-var numPlayers = 3;
+var numPlayers = 2;
+var pointsToWin = 10;
 /* ****************************************
 *                                         *
 *       ON CREATE A NEW GAME CLICK        *
@@ -77,12 +78,11 @@ function hostCreateNewGame() {
   // Join the Room and wait for the players
   this.join(thisGameId.toString());
 
-  myObj = {[thisGameId]: {gameId: thisGameId, hostSocketId: this.id, gameIsReady: true}}
-  gameObject = myObj[thisGameId];
+  myObj = {gameId: thisGameId, hostSocketId: this.id, gameIsReady: true, pointsToWin: pointsToWin}
   // Return the Room ID (gameId) and the socket ID (mySocketId) to the browser client
-  this.emit('newGameCreated', gameObject);
+  this.emit('newGameCreated', myObj);
   game.hostSocketId = this.id;  //abc
-  console.log('Host Is Prepping Game: ', gameObject);
+  console.log('Host Is Prepping Game: ', myObj);
 };
 
 /* ****************************
@@ -96,15 +96,15 @@ function hostCreateNewGame() {
 // data Contains data entered via player's input - playerName and gameId.
 var playerArray = []; //abc, I don't know what to do to replace this...
 
-function playerJoinGame(player, dynamicObject) {
+function playerJoinGame(player) {
+  console.log('wtf', playerArray);
   var room = gameSocket.adapter.rooms[player.gameId]; //the room that the player is joining
   var playerName = player.playerName;
   var maxRoomSize = numPlayers + 1;
 
   if( room != undefined && room.length <= maxRoomSize){ //check the room to see if it exists and whether or not it is full.
     console.log('The room exists! Entering room ', player.gameId,'.');
-    // Attach the socket id to the data object.
-    //updating the player Object for my own sanity
+    //Updating the Player Object for Funzies
     player.mySocketId = this.id;
     player.playerName = playerName;
     player.playerScore = 0;
@@ -115,14 +115,29 @@ function playerJoinGame(player, dynamicObject) {
     player.isGameWinner = false;
     // Join the room
     this.join(player.gameId);
-    //adds the new player to the players array.
+    //Adds the new player to the players array
     game.players.push(player); //abc
-    playerArray.push(player);
+    //Adds the new player to a Differnt players array
+    playerArray.push(player); //abc
 
-    console.log('PlayersArray', playerArray);
+
+
     if (room.length == maxRoomSize){
-      console.log('GAME IS READY TO START', room.sockets);
+      console.log('GAME IS READY TO START', player);
+      for (var i = 0; i < playerArray.length; i++) {
+        playerSocketId = playerArray[i].mySocketId;
+        io.to(playerSocketId).emit('postPlayer', playerArray[i]);
+      }
+      //set array back to []
+      //post players to the database
+      //draw cards
+      //post cards to the database
+      //change player views
+
+      //find the hostID by making an httpRequest to the server
+      // io.sockets.in(player.gameId).emit('findHost', playerArray);
       hostPrepareGame();
+      playerArray = [];
     }
     // Emit an event notifying the clients that the player has joined the room.
     io.sockets.in(player.gameId).emit('playerJoinedRoom', player, game, playerArray);

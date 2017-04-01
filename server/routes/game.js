@@ -55,4 +55,40 @@ router.post('/newGame', function(req, res) {
   });
 });
 
+// gameObject = {
+//   roomId: data.gameId,
+//   hostSocketId: data.hostSocketId,
+//   currentBlackCard: null,
+//   cardsToPick: 1,
+//   currentRound: 1,
+//   pointsToWin: 10,
+//   isStarted: false,
+//   isOver: false
+// }
+
+router.post('/initGame', function(req, res) {
+
+  var newGameObject = req.body;
+
+  // db query
+  pool.connect(function(err, client, done) {
+    if(err){
+      console.log(err);
+      res.sendStatus(500);
+    }else{
+      client.query('INSERT INTO game_init (room_id, hostSocket_id) VALUES ($1, $2) returning id;',
+        [newGameObject.roomId, newGameObject.hostSocketId], function(err, result) {
+          done();
+          if(err){
+            console.log(err);
+            res.sendStatus(500);
+          }else{
+            res.status(201).send(result.rows);
+            console.log('result post', result.rows);
+          }
+      });
+    }
+  });
+});
+
 module.exports = router;
