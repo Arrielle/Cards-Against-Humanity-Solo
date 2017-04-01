@@ -31,8 +31,6 @@ var pool = new pg.Pool(config);
 
 
 router.post('/newGame', function(req, res) {
-  console.log('hit post route');
-  console.log('here is the body ->', req.body);
 
   var newGameObject = req.body;
 

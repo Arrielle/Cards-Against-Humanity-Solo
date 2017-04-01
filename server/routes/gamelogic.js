@@ -123,22 +123,22 @@ function changeHostView(){
 // Attempt to connect them to the room that matches the gameId entered by the player.
 // data Contains data entered via player's input - playerName and gameId.
 function playerJoinGame(data) {
-  var sock = this;
-  var room = gameSocket.adapter.rooms[data.gameId];
+  var room = gameSocket.adapter.rooms[data.gameId]; //the room that the player is joining
   // Look up the room ID in the Socket.IO manager object to make sure it exists
   // Additionally, make sure the room is not full.
-  if( room != undefined && room.length <= 5){
+    //hard coded
+  if( room != undefined && room.length <= 3){ //check the room to see if it exists and whether or not it is full.
     console.log('this room exists');
     // Attach the socket id to the data object.
-    data.mySocketId = sock.id;
+    data.mySocketId = this.id;
     // Join the room
-    sock.join(data.gameId);
+    this.join(data.gameId);
     //adds the new player to the players array.
     game.players.push(data);
-
-    if (room.length == 5){
+    //hard coded
+    if (room.length == 3){
       console.log('GAME IS READY TO START');
-      //now it knows that the room is full.
+      //if the room is full, spin up the game.
       hostPrepareGame();
     }
     // Emit an event notifying the clients that the player has joined the room.
@@ -148,7 +148,7 @@ function playerJoinGame(data) {
     console.log('this room does not exist');
     // Otherwise, send an error message back to the player.
     this.emit('errorAlert', {message: "Sorry about that! It looks like this room does not exist."} );
-  } else if (room.length > 4){
+  } else if (room.length > 3){
     this.emit('errorAlert', {message: "Sorry, but this room is full!"})
     //If the room does not exist
   }
@@ -190,7 +190,7 @@ function sendCardsToServer(playerCards, playerObject){
     // nextPlayer(player); //sends white cards, and sets the next player.
     whiteCardsToSend(playerCards, playerObject);
     //this updates the czar view if everyone has played.
-    if (game.cardsToJudge.length == 3){ //HARD CODED
+    if (game.cardsToJudge.length == 1){ //HARD CODED
       var cardsToJudge = game.cardsToJudge;
       var gameId = game.gameId;
       var player = data;
