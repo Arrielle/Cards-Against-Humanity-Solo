@@ -57,16 +57,14 @@ player = {
   isReady: false
 }
 
+var numPlayers = 3;
+/* ****************************************
+*                                         *
+*       ON CREATE A NEW GAME CLICK        *
+*                                         *
+**************************************** */
 
-/* ****************************
-*                             *
-*       HOST FUNCTIONS        *
-*                             *
-******************************* */
-
-//search abc to find things I need to remove from my code; 
-
-var hostSocketId = null;
+//search abc to find things I need to remove from my code;
 function randomNumber(){
   var randomNumber = ( Math.random() * 100000 ) | 0;
   return randomNumber;
@@ -79,13 +77,62 @@ function hostCreateNewGame() {
   // Join the Room and wait for the players
   this.join(thisGameId.toString());
 
-  myObj = {[this.id]: {gameId: thisGameId, hostSocketId: this.id, gameIsReady: true}}
-  gameObject = myObj[this.id];
+  myObj = {[thisGameId]: {gameId: thisGameId, hostSocketId: this.id, gameIsReady: true}}
+  gameObject = myObj[thisGameId];
   // Return the Room ID (gameId) and the socket ID (mySocketId) to the browser client
   this.emit('newGameCreated', gameObject);
   game.hostSocketId = this.id;  //abc
   console.log('Host Is Prepping Game: ', gameObject);
 };
+
+/* ****************************
+*                             *
+*       Player FUNCTIONS      *
+*                             *
+**************************** */
+
+// A player clicked the 'START GAME' button.
+// Attempt to connect them to the room that matches the gameId entered by the player.
+// data Contains data entered via player's input - playerName and gameId.
+var playerArray = []; //abc, I don't know what to do to replace this...
+
+function playerJoinGame(player, dynamicObject) {
+  var room = gameSocket.adapter.rooms[player.gameId]; //the room that the player is joining
+  var playerName = player.playerName;
+  var maxRoomSize = numPlayers + 1;
+
+  if( room != undefined && room.length <= maxRoomSize){ //check the room to see if it exists and whether or not it is full.
+    console.log('The room exists! Entering room ', player.gameId,'.');
+    // Attach the socket id to the data object.
+    //updating the player Object for my own sanity
+    player.mySocketId = this.id;
+    player.playerName = playerName;
+    player.playerScore = 0;
+    player.cardsInHand = [];
+    player.isCzar = false;
+    player.isReady = false;
+    player.isRoundWinner = false;
+    player.isGameWinner = false;
+    // Join the room
+    this.join(player.gameId);
+    //adds the new player to the players array.
+    game.players.push(player); //abc
+    playerArray.push(player);
+
+    console.log('PlayersArray', playerArray);
+    if (room.length == maxRoomSize){
+      console.log('GAME IS READY TO START', room.sockets);
+      hostPrepareGame();
+    }
+    // Emit an event notifying the clients that the player has joined the room.
+    io.sockets.in(player.gameId).emit('playerJoinedRoom', player, game, playerArray);
+  } else if (room == undefined){ //The room does not exist.
+    console.log('The cake is a lie.');
+    this.emit('errorAlert', {message: "Sorry about that! It looks like this room does not exist."} );
+  } else if (room.length > maxRoomSize){ //The room is full.
+    this.emit('errorAlert', {message: "Sorry, but this room is full!"})
+  }
+}
 
 function hostPrepareGame(data) {
   game.gameId = game.players[0].gameId;
@@ -119,47 +166,6 @@ function changeHostView(){
     isStarted: true
   }
   io.to(game.hostSocketId).emit('changeHostView', data, game);
-}
-
-/* ****************************
-*                             *
-*       Player FUNCTIONS      *
-*                             *
-**************************** */
-
-// A player clicked the 'START GAME' button.
-// Attempt to connect them to the room that matches the gameId entered by the player.
-// data Contains data entered via player's input - playerName and gameId.
-function playerJoinGame(data) {
-  var room = gameSocket.adapter.rooms[data.gameId]; //the room that the player is joining
-  // Look up the room ID in the Socket.IO manager object to make sure it exists
-  // Additionally, make sure the room is not full.
-    //hard coded
-  if( room != undefined && room.length <= 3){ //check the room to see if it exists and whether or not it is full.
-    console.log('this room exists');
-    // Attach the socket id to the data object.
-    data.mySocketId = this.id;
-    // Join the room
-    this.join(data.gameId);
-    //adds the new player to the players array.
-    game.players.push(data);
-    //hard coded
-    if (room.length == 3){
-      console.log('GAME IS READY TO START', room.sockets);
-      //if the room is full, spin up the game.
-      hostPrepareGame();
-    }
-    // Emit an event notifying the clients that the player has joined the room.
-    io.sockets.in(data.gameId).emit('playerJoinedRoom', data, game);
-    //If the room is full.
-  } else if (room == undefined){
-    console.log('this room does not exist');
-    // Otherwise, send an error message back to the player.
-    this.emit('errorAlert', {message: "Sorry about that! It looks like this room does not exist."} );
-  } else if (room.length > 3){
-    this.emit('errorAlert', {message: "Sorry, but this room is full!"})
-    //If the room does not exist
-  }
 }
 
 function changePlayerView(playerSocketId){

@@ -96,36 +96,33 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //*******************//
 
   function error(data) {
-    console.log('error?', data);
-
     swal({
       title: 'Oops...',
       text: data.message,
       confirmButtonColor: '#000',
     });
-    //     swal(
-    //   'Oops...',
-    //   data.message,
-    //   'error',
-    //   confirmButtonColor: #000,
-    // )
-    // alert(data.message);
   }
 
   //player has clicked start
   self.onPlayerStartClick = function () {
 
-    // collect data to send to the server
+    // collect data to send to the server/database
     var data = {
       gameId : self.gameId,
       playerName : self.playerName,
-      playerScore: 0,
-      cardsInHand: [],
-      isCzar: false,
-      isReady: false
-      // numPlayersInRoom : self.host.numPlayersInRoom,
     };
-    socket.emit('playerJoinGame', data);
+
+    //Creating a dynamic variable to use as the player array on the server.
+    var t = 't';
+    var four = '4';
+    var taco = self.gameId.toString();
+
+    eval('var ' + (t + four) + ' = ' + self.gameId.toString() + ';');
+    var dynamicObject = {
+      t4: [],
+    }
+    console.log(t4);
+    socket.emit('playerJoinGame', data, dynamicObject);
   }
 
   //When a player clicks Join a Game the Join Game view is displayed.
@@ -133,15 +130,18 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     self.playerJoining = true;
   }
 
-  function playerJoinedRoom(data, gameData) {
+  function playerJoinedRoom(data, gameData, array) {
+    console.log('hmm?', data, 'mmm', gameData);
+    console.log('array?', array);
     // When a player joins a room, do the updateWaitingScreen funciton.
-    updateWaitingScreen(data);
+    updateWaitingScreen(data, array);
   }
   //
-  function updateWaitingScreen(playerData) {
-    // Update host screen - switch to angular!! :)
-    $('#playersWaiting').append('<p/>Player ' + playerData.playerName + ' joined the game.</p>');
-    $('#playerWaitingMessage').append('<p>Joined Game ' + playerData.gameId + '. Waiting on other players... Please wait for the game to begin.</p>');
+  function updateWaitingScreen(playerData, array) {
+    for (var i = 0; i < array.length; i++) {
+      $('#playersWaiting').append('<p/>Player ' + array[i].playerName + ' joined the game.</p>');
+      $('#playerWaitingMessage').append('<p>Joined Game ' + array[i].playerName + '. Waiting on other players... Please wait for the game to begin.</p>');
+    }
   }
 
   //************************//
