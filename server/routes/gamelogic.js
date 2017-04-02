@@ -92,18 +92,15 @@ exports.initGame = function(sio, socket){
       console.log('2 Room length?', room.length);
       // // Emit an event notifying the clients that the player has joined the room
       // Inserts new player into the players table database.
+      addPlayersToGame(player);
+      // pool.query('INSERT INTO players_in_game(player_name, room_id, mySocket_id) VALUES ($1, $2, $3);',
+      //   [player.playerName, player.roomId, player.mySocketId], function(err, result) {
+      //     console.log('SWEET'); // output: foo
+      //   });
 
-
-      pool.query('INSERT INTO players_in_game(player_name, room_id, mySocket_id) VALUES ($1, $2, $3);',
-      [player.playerName, player.roomId, player.mySocketId], function(err, result) {
-        console.log('SWEET'); // output: foo
-      });
       console.log('info going into queries', player.roomId);
       // Sets the game_id in the players table database.
-      pool.query('UPDATE players_in_game AS p SET game_id = g.id FROM game_init AS g WHERE p.room_id = g.room_id AND g.room_id = $1 RETURNING g.id;',
-      [player.roomId], function(err, result) {
-        console.log('SUPER SWEET', result.rows[0]); // output: foo
-      });
+
 
       io.sockets.in(player.roomId).emit('playerJoinedRoom', player); //ok
 
@@ -115,6 +112,24 @@ exports.initGame = function(sio, socket){
       this.emit('errorAlert', {message: "Sorry, but this room is full!"})
     }
   }
+
+function addPlayersToGame(player){
+  pool.query('INSERT INTO players_in_game(player_name, room_id, mySocket_id) VALUES ($1, $2, $3);',
+  [player.playerName, player.roomId, player.mySocketId], function(err, result) {
+    console.log('SWEET'); // output: foo
+    pool.query('UPDATE players_in_game AS p SET game_id = g.id FROM game_init AS g WHERE p.room_id = g.room_id AND g.room_id = $1 RETURNING g.id;',
+    [player.roomId], function(err, result) {
+      console.log('SUPER SWEET', result.rows[0]); // output: foo
+    });
+  });
+}
+// function addPlayersToGame(player.playerN){
+//   pool.query('INSERT INTO players_in_game(player_name, room_id, mySocket_id) VALUES ($1, $2, $3);',
+//   [player.playerName, player.roomId, player.mySocketId], function(err, result) {
+//     console.log('SWEET'); // output: foo
+//   });
+// }
+
   //
   // // client.query('SELECT * FROM game_init LEFT OUTER JOIN players_in_game ON game_init.id = players_in_game.game_id WHERE game_id = $1;',
   // // [gameId], function(err, result) {
