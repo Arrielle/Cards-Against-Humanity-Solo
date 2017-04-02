@@ -19,9 +19,9 @@ exports.initGame = function(sio, socket){
   gameSocket.on('hostCreateNewGame', hostCreateNewGame);
   gameSocket.on('playerJoinGame', playerJoinGame);
   //POSSIBLY HANDLING PG ERRORS?
-  pool.on('error', function(e, client) {
-    console.log('Pool Error...');
-  });
+  // pool.on('error', function(e, client) {
+  //   console.log('Pool Error...');
+  // });
   /* ****************************************
   *                                         *
   *              GAME INIT                  *
@@ -130,7 +130,6 @@ exports.initGame = function(sio, socket){
       // console.log('game settings', gameSettings);
       drawWhiteCardDeck(gameSettings, players);
       drawBlackCard(gameSettings, players);
-      //SET THE BLACK CARD
       //SET THE CZAR
       //INITIALIZE PLAYER VIEWS
     });
@@ -191,17 +190,23 @@ exports.initGame = function(sio, socket){
     [gameId], function(err, result) {
       var currentBlackCard = result.rows[0];
       blackCardId = result.rows[0].id;
+      blackCardText = result.rows[0].text;
       //emit the black card to the sockets as well as the host.
       //change the currentblackcard in the games settings (database)?
       //remove the black card from the deck.
       removeBlackCardFromDeck(blackCardId, gameId);
+      updateCurrentBlackCardInDatabase(blackCardText, gameId);
     });
   }
   //~.:------------>REMOVE BLACK CARD FROM 'DECK'<------------:.~//
   function removeBlackCardFromDeck(blackCardId, gameId){
     pool.query('INSERT INTO game_black_cards (game_id, black_id) VALUES ($1, $2);',
     [gameId, blackCardId], function(err, result) {
-      console.log('BLACKCARD: Check Database to see if cards were added to the game_white_cards table.');
+    });
+  }
+  function updateCurrentBlackCardInDatabase(blackCardText, gameId){
+    pool.query('UPDATE game_init SET currentBlackCard_id = $1 WHERE id = $2;',
+    [gameId, blackCardText], function(err, result) {
     });
   }
 
