@@ -18,11 +18,11 @@ if(process.env.DATABASE_URL) {
     database: 'cardsagainsthumanity' || 'postgres://deakcitavmtsug:7194bb474de3bde1b02ee11e5ae22ceac86dda76098a23a83d81cedc530372e3@ec2-54-163-254-76.compute-1.amazonaws.com:5432/dfpj6lsi4kgsis',
     host: 'localhost',
     port: 5432,
-    max: 10,
+    max: 50,
     idleTimeoutMillis: 30000
   };
 }
 
-const pool = new pg.Pool(config);
+var pool = new pg.Pool(config);
 
 module.exports = config;
