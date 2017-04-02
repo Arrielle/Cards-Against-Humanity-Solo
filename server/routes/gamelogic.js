@@ -11,37 +11,36 @@ exports.initGame = function(sio, socket){
   gameSocket = socket;
   //HANDSHAKE!
   gameSocket.emit('connected', { message: "You are connected!" });
+  //NEED DISCONNECT HANDLER
   //INITIALIZING GAME
   gameSocket.on('hostCreateNewGame', hostCreateNewGame);
   gameSocket.on('playerJoinGame', playerJoinGame);
   //GAME LOGIC
   gameSocket.on('dealCardsToPlayers', dealCardsToPlayers);
 
-  //   // gameSocket.on('hostRoomFull', hostPrepareGame);
-  //   // gameSocket.on('changeHostView', changeHostView);
-  //   // gameSocket.on('changePlayerView', changePlayerView);
-  //   // gameSocket.on('findPlayersCards', findPlayersCards);
-  //   // // gameSocket.on('setCzar', setCzar);
-  //   // gameSocket.on('selectRoundWinner', selectRoundWinner);
-  //   // gameSocket.on('findCzar', findCzar);
-  //   // // gameSocket.on('cardsToJudge', cardsToJudge);
-  //   // // gameSocket.on('playerHideButton', changePlayerStatus);
-  //   // gameSocket.on('sendCardsToCzar', sendCardsToServer);
-  //   // // gameSocket.on('hostCountdownFinished', hostStartGame);
-  //   // // gameSocket.on('hostNextRound', hostNextRound);
+  // gameSocket.on('hostRoomFull', hostPrepareGame);
+  // gameSocket.on('changeHostView', changeHostView);
+  // gameSocket.on('changePlayerView', changePlayerView);
+  // gameSocket.on('findPlayersCards', findPlayersCards);
+  // gameSocket.on('setCzar', setCzar);
+  // gameSocket.on('selectRoundWinner', selectRoundWinner);
+  // gameSocket.on('findCzar', findCzar);
+  // gameSocket.on('cardsToJudge', cardsToJudge);
+  // gameSocket.on('playerHideButton', changePlayerStatus);
+  // gameSocket.on('sendCardsToCzar', sendCardsToServer);
+  // gameSocket.on('hostCountdownFinished', hostStartGame);
+  // gameSocket.on('hostNextRound', hostNextRound);
 
-  //   //
-  //   // // Player Events
-  //   // gameSocket.on('playerAnswer', playerAnswer);
-  //   // gameSocket.on('playerRestart', playerRestart);
-  var numPlayers = 2;
-  // var pointsToWin = 10;
-  // /* ****************************************
-  // *                                         *
-  // *       ON CREATE A NEW GAME CLICK        *
-  // *                                         *
-  // **************************************** */
-  // // The 'START' button was clicked and 'hostCreateNewGame' event occurred.
+  // Player Events
+  // gameSocket.on('playerAnswer', playerAnswer);
+  // gameSocket.on('playerRestart', playerRestart);
+
+  /* ****************************************
+  *                                         *
+  *       ON CREATE A NEW GAME CLICK        *
+  *                                         *
+  **************************************** */
+  // The 'START' button was clicked and 'hostCreateNewGame' event occurred.
   function hostCreateNewGame() {
     // Create a unique Socket.IO Room
     var thisRoomId = ( Math.random() * 100000 ) | 0;
@@ -55,17 +54,16 @@ exports.initGame = function(sio, socket){
     console.log('Host Is Prepping Game: ', thisRoomId, hostSocketId);
   };
 
-  // /* ****************************
-  // *                             *
-  // *       Player FUNCTIONS      *
-  // *                             *
-  // **************************** */
-  //
+  /* ****************************
+  *                             *
+  *       Player FUNCTIONS      *
+  *                             *
+  **************************** */
+
   // // A player clicked the 'START GAME' button.
   // // Attempt to connect them to the room that matches the gameId entered by the player.
-  // // data Contains data entered via player's input - playerName and gameId.
-  // var playerArray = []; //BAD!, I don't know what to do to replace this...
   function playerJoinGame(player, numPlayers) {
+    var numPlayers = 2; //Hard Coded players
     var room = gameSocket.adapter.rooms[player.roomId]; //the room that the player is joining
     var maxRoomSize = (numPlayers + 1);//socket room has the max players and host.
     //check the room to see if it exists and whether or not it is full.
@@ -96,11 +94,45 @@ exports.initGame = function(sio, socket){
     client.query('UPDATE players_in_game AS p SET game_id = g.id FROM game_init AS g WHERE p.room_id = g.room_id AND g.room_id = $1 RETURNING g.id',
     [player.roomId], function(err, result) {
       gameId = result.rows[0].id;
-      client.query('SELECT * FROM game_init LEFT OUTER JOIN players_in_game ON game_init.id = players_in_game.game_id WHERE game_id = $1;',
-      [gameId], function(err, result) {
-        console.log(result.rows[0]);
-        //if the players in the game =
-      });
+      retrieveGameData(gameId)
+    });
+  }
+
+  function retrieveGameData(gameId){
+    client.query('SELECT * FROM game_init LEFT OUTER JOIN players_in_game ON game_init.id = players_in_game.game_id WHERE game_id = $1;',
+    [gameId], function(err, result) {
+      console.log(result.rows[0]);
+      gameSettings = {
+        gameId: result.rows[0].id,
+        roomId: result.rows[0].room_id,
+        hostSocketId: result.rows[0].hostsocket_id,
+        currentBlackCard: result.rows[0].currentblackcard_id,
+        whiteCardsRequired: result.rows[0].whitecardsrequired,
+        cardsToPick: result.rows[0].cardstopick,
+        currentRound: result.rows[0].currentround,
+        pointsToWin: result.rows[0].pointstowin,
+        isStarted: result.rows[0].isstarted,
+        isOver: result.rows[0].isover,
+        numberOfPlayers: 2 //hard coded
+      }
+
+      var players = [];
+      for (var i = 0; i < result.rows.length; i++) {
+        players[i] = {
+          playerName: result.rows[i].player_name,
+          mySocketId: result.rows[i].mysocket_id,
+          score: result.rows[i].score,
+          isCzar: result.rows[i].isczar,
+          isReady: result.rows[i].isready,
+          isRoundWinner: result.rows[i].isroundwinner,
+          isGameWinner: result.rows[i].isgamewinner,
+          cardsInHand: [],
+        }
+      }
+      console.log('How many players?', players.length, 'players', players);
+      //if the players in the game == numPlayers
+      //draw cards for each player? later send
+
     });
   }
 

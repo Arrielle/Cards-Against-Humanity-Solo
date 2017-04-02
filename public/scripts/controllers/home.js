@@ -90,34 +90,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       //consider emitting this logic to the server so that the client does not have access to the information?
       //then from the server emit something back to draw the cards?
 
-      gameSettings = {
-        gameId: response.data[0].id,
-        roomId: response.data[0].room_id,
-        hostSocketId: response.data[0].hostsocket_id,
-        currentBlackCard: response.data[0].currentblackcard_id,
-        whiteCardsRequired: response.data[0].whitecardsrequired,
-        cardsToPick: response.data[0].cardstopick,
-        currentRound: response.data[0].currentround,
-        pointsToWin: response.data[0].pointstowin,
-        isStarted: response.data[0].isstarted,
-        isOver: response.data[0].isover,
-        numberOfPlayers: 2 //hard coded
-      }
-
-      var players = [];
-
-      for (var i = 0; i < response.data.length; i++) {
-        players[i] = {
-          playerName: response.data[i].player_name,
-          mySocketId: response.data[i].mysocket_id,
-          score: response.data[i].score,
-          isCzar: response.data[i].isczar,
-          isReady: response.data[i].isready,
-          isRoundWinner: response.data[i].isroundwinner,
-          isGameWinner: response.data[i].isgamewinner,
-          cardsInHand: [],
-        }
-      }
+      
       var maxRoomSize = gameSettings.numberOfPlayers;
       console.log('MAX ROOM SIZE', maxRoomSize);
       //NOW take the players and give both of them ten cards
