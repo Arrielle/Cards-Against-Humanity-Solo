@@ -34,7 +34,7 @@ exports.initGame = function(sio, socket){
   //   // // Player Events
   //   // gameSocket.on('playerAnswer', playerAnswer);
   //   // gameSocket.on('playerRestart', playerRestart);
-  // var numPlayers = 2;
+  var numPlayers = 2;
   // var pointsToWin = 10;
   // /* ****************************************
   // *                                         *
@@ -54,7 +54,7 @@ exports.initGame = function(sio, socket){
     this.emit('gameInitView', thisRoomId);
     console.log('Host Is Prepping Game: ', thisRoomId, hostSocketId);
   };
-  //
+
   // /* ****************************
   // *                             *
   // *       Player FUNCTIONS      *
@@ -65,55 +65,43 @@ exports.initGame = function(sio, socket){
   // // Attempt to connect them to the room that matches the gameId entered by the player.
   // // data Contains data entered via player's input - playerName and gameId.
   // var playerArray = []; //BAD!, I don't know what to do to replace this...
-  //
-  function playerJoinGame(player) {
+  function playerJoinGame(player, numPlayers) {
     var room = gameSocket.adapter.rooms[player.roomId]; //the room that the player is joining
-    var playerName = player.playerName;
-    var maxRoomSize = 3; //HARD CODED
-
-    if( room != undefined && room.length <= maxRoomSize){ //check the room to see if it exists and whether or not it is full.
+    var maxRoomSize = (numPlayers + 1);//socket room has the max players and host.
+    //check the room to see if it exists and whether or not it is full.
+    if( room != undefined && room.length <= maxRoomSize){
       console.log('1 The room exists! Entering room ', player.roomId,'.');
-      //Initializing the Player Object for Funzies??
-      player = {
-        mySocketId: this.id,
-        roomId: player.roomId,
-        playerName: player.playerName
-      }
-      // Join the room
-      this.join(player.roomId);
-
-      console.log('2 Room length?', room.length);
-      // // Emit an event notifying the clients that the player has joined the room
-      io.sockets.in(player.roomId).emit('playerJoinedRoom', player); //ok
-
-
-        client.connect(function(err, client, done) {
-          if(err){
-            console.log(err);
-            res.sendStatus(500);
-          }else{
-            client.query('INSERT INTO players_in_game(player_name, room_id, mySocket_id) VALUES ($1, $2, $3);',
-            [player.playerName, player.roomId, player.mySocketId], function(err, result) {
-              done();
-              if(err){
-                console.log(err);
-                res.sendStatus(500);
-              }else{
-                res.sendStatus(201);
-                // console.log('result post', result.rows);
-              }
-            });
-          }
-        });
-
-
-        io.sockets.in(player.roomId).emit('postPlayer', player); //ok
+      var player = {mySocketId: this.id, roomId: player.roomId,playerName: player.playerName};
+      this.join(player.roomId); // Join the room
+      // Emit an event notifying the clients that the player has joined the room
+      io.sockets.in(player.roomId).emit('playerJoinedRoom', player);
+      insertPlayers(player);
+      updatePlayers(player);
     } else if (room == undefined){ //The room does not exist.
       console.log('The cake is a lie.');
       this.emit('errorAlert', {message: "Sorry about that! It looks like this room does not exist."} );
     } else if (room.length > maxRoomSize){ //The room is full.
       this.emit('errorAlert', {message: "Sorry, but this room is full!"})
     }
+  }
+
+  function insertPlayers(player){
+    // Inserts new player into the players table database.
+    client.query('INSERT INTO players_in_game(player_name, room_id, mySocket_id) VALUES ($1, $2, $3);',
+    [player.playerName, player.roomId, player.mySocketId]);
+  }
+
+  function updatePlayers(player){
+    // Sets the game_id in the players table database.
+    client.query('UPDATE players_in_game AS p SET game_id = g.id FROM game_init AS g WHERE p.room_id = g.room_id AND g.room_id = $1 RETURNING g.id',
+    [player.roomId], function(err, result) {
+      gameId = result.rows[0].id;
+      client.query('SELECT * FROM game_init LEFT OUTER JOIN players_in_game ON game_init.id = players_in_game.game_id WHERE game_id = $1;',
+      [gameId], function(err, result) {
+        console.log(result.rows[0]);
+        //if the players in the game =
+      });
+    });
   }
 
   function allPlayersConnected(players, gameSettings){

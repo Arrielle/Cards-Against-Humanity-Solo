@@ -20,48 +20,50 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //   socket.on('czarCards', updateCzarView);
   //   socket.on('updatePlayerView', updatePlayerView);
   //   socket.on('newRound', newRound);
-  socket.on('postPlayer', postPlayer);
+  // socket.on('postPlayer', postPlayer);
   //   // socket.on('sendCardsToServer', sendCardsToServer)
   //ALERTS
   socket.on('errorAlert', error);
   //VIEW CHANGES
   socket.on('changeHostView', onChangeHostView);
   socket.on('changePlayerView', onChangePlayerView);
-  //
-  //   //*******************************//
-  //   //                               //
-  //   //    Host Join/Game Creation    //
-  //   //                               //
-  //   //*******************************//
+
+    //*******************************//
+    //                               //
+    //    Host Join/Game Creation    //
+    //                               //
+    //*******************************//
+
   //Emits Data to the Server and Spins up a New Socket Room
   self.onCreateClick = function () {
     socket.emit('hostCreateNewGame');
   }
-
+  //Call to this function was sent from the server, with the room ID.
   function gameInitView(thisRoomId) {
     $scope.$apply(showHostView(thisRoomId));
   }
-
+  //Updates The Host's View
   function showHostView(thisRoomId){
     self.isStarted = true;
     self.gameTemplate = false;
     self.roomId = thisRoomId;
   }
 
-  //   //*******************//
-  //   //                   //
-  //   //    Player Join    //
-  //   //                   //
-  //   //*******************//
+    //*******************//
+    //                   //
+    //    Player Join    //
+    //                   //
+    //*******************//
+
+  //When a player clicks Join a Game the Join Game view is displayed.
+  self.playerJoinView = function(){
+    self.playerJoining = true;
+  }
   //player has clicked start
   self.onPlayerStartClick = function () {
-    console.log('clicked');
     // collect data to send to the server/database
-    var data = {
-      roomId : self.roomId,
-      playerName : self.playerName,
-    };
-    socket.emit('playerJoinGame', data);
+    var userData = {roomId : self.roomId, playerName : self.playerName};
+    socket.emit('playerJoinGame', userData);
   }
   //Error if the user tries to join a room that is full, or non existant.
   //Should also alert if the username is empty
@@ -71,33 +73,6 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       title: 'Oops...',
       text: data.message,
       confirmButtonColor: '#000',
-    });
-  }
-
-  // function checkingIfPlayersReady(playersArray){
-  //   console.log('heyho', playersArray);
-  //   roomId = playersArray.roomId;
-  // }
-
-  function postPlayer(playerObject){
-    //THIS ADDS THE PLAYER TO THE PLAYERS TABLE
-    $http({
-      method: 'POST',
-      url: '/newPlayer',
-      data: playerObject
-    }).then(function(response){
-      updatePlayerInDatabase(playerObject);
-    });
-  }
-  //THIS JOINS THE PLAYERS TABLE WITH THE GAME_INIT TABLE AND SETS THE GAME ID
-  function updatePlayerInDatabase(playerObject){
-    $http({
-      method: 'PUT',
-      url: '/addPlayersToGame',
-      data: playerObject
-    }).then(function(response){
-      gameId = response.data[0].id;
-      findGameInformation(gameId);
     });
   }
 
@@ -191,17 +166,13 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //     socket.emit('findPlayersCards', game.players);
   //   }
   //
-  //When a player clicks Join a Game the Join Game view is displayed.
-  self.playerJoinView = function(){
-    self.playerJoining = true;
-  }
+
   //
   function playerJoinedRoomNotice(player) {
-    // When a player joins a room, do the updateWaitingScreen funciton. //BAD!
-
+    // When a player joins a room, do the updateWaitingScreen function
+    // Need to upgrade to angular.
       $('#playersWaiting').append('<p/>Player ' + player.playerName + ' joined the game.</p>');
       $('#playerWaitingMessage').append('<p>Joined Game ' + player.playerName + '. Waiting on other players... Please wait for the game to begin.</p>');
-
   }
 
 
