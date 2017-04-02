@@ -38,11 +38,11 @@ exports.initGame = function(sio, socket){
   // var numPlayers = 2;
   // var pointsToWin = 10;
   pool.on('error', function(e, client) {
-  // if a client is idle in the pool
-  console.log('Pool Error...');
-  // and receives an error - for example when your PostgreSQL server restarts
-  // the pool will catch the error & let you handle it here
-});
+    // if a client is idle in the pool
+    console.log('Pool Error...');
+    // and receives an error - for example when your PostgreSQL server restarts
+    // the pool will catch the error & let you handle it here
+  });
   // /* ****************************************
   // *                                         *
   // *       ON CREATE A NEW GAME CLICK        *
@@ -113,62 +113,87 @@ exports.initGame = function(sio, socket){
     }
   }
 
-function addPlayersToGame(player){
-  pool.query('INSERT INTO players_in_game(player_name, room_id, mySocket_id) VALUES ($1, $2, $3);',
-  [player.playerName, player.roomId, player.mySocketId], function(err, result) {
-    console.log('SWEET'); // output: foo
-    pool.query('UPDATE players_in_game AS p SET game_id = g.id FROM game_init AS g WHERE p.room_id = g.room_id AND g.room_id = $1 RETURNING g.id;',
-    [player.roomId], function(err, result) {
-      console.log('SUPER SWEET', result.rows[0]); // output: foo
+  function addPlayersToGame(player){
+    //~.:------------>ISERTING THE PLAYER INTO THE PLAYERS TABLE<------------:.~//
+    console.log('player object before insert', player);
+    pool.query('INSERT INTO players_in_game(player_name, room_id, mySocket_id) VALUES ($1, $2, $3);',
+    [player.playerName, player.roomId, player.mySocketId], function(err, result) {
+      // console.log('Players Inserted Into Database'); // output: foo
+      //~.:------------>UPDATES THE USERS GAME ID<------------:.~//
+      pool.query('UPDATE players_in_game AS p SET game_id = g.id FROM game_init AS g WHERE p.room_id = g.room_id AND g.room_id = $1 RETURNING g.id;',
+      [player.roomId], function(err, result) {
+        console.log('Does update hit twice?');
+        gameId = result.rows[0].id;
+        findAllPlayersInGame(gameId);
+      });
     });
-  });
-}
-// function addPlayersToGame(player.playerN){
-//   pool.query('INSERT INTO players_in_game(player_name, room_id, mySocket_id) VALUES ($1, $2, $3);',
-//   [player.playerName, player.roomId, player.mySocketId], function(err, result) {
-//     console.log('SWEET'); // output: foo
-//   });
-// }
+  }
+
+  //   function findAllPlayersInGame(gameId){
+  //     pool.query('SELECT COUNT(*) FROM game_init LEFT OUTER JOIN players_in_game ON game_init.id = players_in_game.game_id WHERE game_id = $1;',
+  //     [gameId], function(err, result) {
+  //       console.log('game Info Should be hit twice... ', result.rows[0].count);
+  //       playersInGame = result.rows[0].count;
+  //       if(playersInGame == 2) { //hard coded
+  //         pool.query('SELECT COUNT(*) FROM game_init LEFT OUTER JOIN players_in_game ON game_init.id = players_in_game.game_id WHERE game_id = $1;',
+  //         [gameId], function(err, result) {
+  //           console.log('game Info Should be hit once', result.rows[0]);
+  //           // playersInGame = result.rows[0].count;
+  //         });
+  //         // });
+  //       }
+  //
+  //   });
+  // }
+
+
+  function findAllPlayersInGame(gameId){
+    pool.query('SELECT COUNT(*) FROM game_init LEFT OUTER JOIN players_in_game ON game_init.id = players_in_game.game_id WHERE game_id = $1;',
+    [gameId], function(err, result) {
+      console.log('game count Should be hit twice... ', result.rows[0].count);
+      playersInGame = result.rows[0].count;
+
+      if(playersInGame == 2){ //HARD CODED
+        console.log('TWO PLAYERS!!');
+        pool.query('SELECT * FROM game_init LEFT OUTER JOIN players_in_game ON game_init.id = players_in_game.game_id WHERE game_id = $1;',
+        [gameId], function(err, result) {
+          // console.log('game Info Should be hit once', result.rows[0], result.rows[1]);
+          gameSettings = {
+            gameId: result.rows[0].id,
+            roomId: result.rows[0].room_id,
+            hostSocketId: result.rows[0].hostsocket_id,
+            currentBlackCard: result.rows[0].currentblackcard_id,
+            whiteCardsRequired: result.rows[0].whitecardsrequired,
+            cardsToPick: result.rows[0].cardstopick,
+            currentRound: result.rows[0].currentround,
+            pointsToWin: result.rows[0].pointstowin,
+            isStarted: result.rows[0].isstarted,
+            isOver: result.rows[0].isover,
+            numberOfPlayers: 2 //hard coded
+          }
+          console.log('game settings', gameSettings);
+          var players = [];
+
+          for (var i = 0; i < result.rows.length; i++) {
+            players[i] = {
+              playerName: result.rows[i].player_name,
+              mySocketId: result.rows[i].mysocket_id,
+              score: result.rows[i].score,
+              isCzar: result.rows[i].isczar,
+              isReady: result.rows[i].isready,
+              isRoundWinner: result.rows[i].isroundwinner,
+              isGameWinner: result.rows[i].isgamewinner,
+              cardsInHand: [],
+            }
+          }
+          console.log('players?', players);
+        });
+      }
+    });
+  }
 
   //
-  // // client.query('SELECT * FROM game_init LEFT OUTER JOIN players_in_game ON game_init.id = players_in_game.game_id WHERE game_id = $1;',
-  // // [gameId], function(err, result) {
-  // //   if(err){
-  // //     console.log(err);
-  // //     res.sendStatus(500);
-  // //   }else{
-  // //     console.log('game Info', result.rows[0]);
-  // //     gameSettings = {
-  // //       gameId: result.rows[0].id,
-  // //       roomId: result.rows[0].room_id,
-  // //       hostSocketId: result.rows[0].hostsocket_id,
-  // //       currentBlackCard: result.rows[0].currentblackcard_id,
-  // //       whiteCardsRequired: result.rows[0].whitecardsrequired,
-  // //       cardsToPick: result.rows[0].cardstopick,
-  // //       currentRound: result.rows[0].currentround,
-  // //       pointsToWin: result.rows[0].pointstowin,
-  // //       isStarted: result.rows[0].isstarted,
-  // //       isOver: result.rows[0].isover,
-  // //       numberOfPlayers: 2 //hard coded
-  // //     }
-  // //     console.log('game settings', gameSettings);
-  // //     var players = [];
-  // //
-  // //     for (var i = 0; i < result.rows[0].numberOfPlayers; i++) {
-  // //       players[i] = {
-  // //         playerName: result.rows[i].player_name,
-  // //         mySocketId: result.rows[i].mysocket_id,
-  // //         score: result.rows[i].score,
-  // //         isCzar: result.rows[i].isczar,
-  // //         isReady: result.rows[i].isready,
-  // //         isRoundWinner: result.rows[i].isroundwinner,
-  // //         isGameWinner: result.rows[i].isgamewinner,
-  // //         cardsInHand: [],
-  // //       }
-  // //     }
-  // //   }
-  // //   console.log('players?', players);
-  // // });
+
   //
   // function allPlayersConnected(players, gameSettings){
   //   console.log(players, gameSettings);
