@@ -129,59 +129,82 @@ exports.initGame = function(sio, socket){
       // console.log('players', players);
       // console.log('game settings', gameSettings);
       drawWhiteCardDeck(gameSettings, players);
+      drawBlackCard(gameSettings, players);
+      //SET THE BLACK CARD
+      //SET THE CZAR
+      //INITIALIZE PLAYER VIEWS
     });
   }
-    //****************************//
-    //                            //
-    //    White Card Functions    //
-    //                            //
-    //****************************//
-    //~.:------------>DRAW WHITE CARDS AT RANDOM<------------:.~//
-    function drawWhiteCardDeck(gameSettings, players){ //Give this function the player array
-      gameId = gameSettings.gameId;
-      pool.query('WITH  allgamecards AS (SELECT * FROM game_white_cards WHERE game_white_cards.game_id = $1) SELECT * FROM allgamecards RIGHT OUTER JOIN white_cards ON white_cards.id = allgamecards.white_id WHERE game_id IS NULL AND white_cards.played = false ORDER BY RANDOM();',
-        [gameId], function(err, result) {
-          var whiteCardDeck = result.rows; //this is the shuffled deck of white cards
-          for (var i = 0; i < players.length; i++) { //loops through the player array
-            var cardsToDraw = gameSettings.whiteCardsRequired - players[i].cardsInHand.length; //sets the number of cards to draw based on how many are needed
-            player = players[i];
-            addCardsToHand(cardsToDraw, whiteCardDeck, player, gameSettings);//takes white cards from the shuffled white deck based on num needed
-            cards = players[i].cardsInHand; //sets cards to the current players hand of cards.
-            for (var j = 0; j < cards.length; j++) { //loops through the players cards and adds them to the database one at a time
-              removeCardsFromDeck(cards[j].id, gameId); //This adds cards to my database so that I can compare later to ensure no cards that have already been drawn are drawn again.
-            }
-          }
-        });
-    }
-    // ~.:------------>ADD CARDS TO THE PLAYER OBJECT<------------:.~//
-    function addCardsToHand(cardsToDraw, whiteCardDeck, player, gameSettings) {
-      for (i = 0; i < cardsToDraw; i++) {
-        var whiteIndex = Math.floor(Math.random() * whiteCardDeck.length); //selects a white card from the deck at random
-        player.cardsInHand.push(whiteCardDeck[whiteIndex]); //pushes the random card into the players hand
-        whiteCardDeck.splice(whiteIndex, 1); //Removes the random card from the shuffled deck.
+  //****************************//
+  //                            //
+  //    White Card Functions    //
+  //                            //
+  //****************************//
+  //~.:------------>DRAW WHITE CARDS AT RANDOM<------------:.~//
+  function drawWhiteCardDeck(gameSettings, players){ //Give this function the player array
+    gameId = gameSettings.gameId;
+    pool.query('WITH  allgamecards AS (SELECT * FROM game_white_cards WHERE game_white_cards.game_id = $1) SELECT * FROM allgamecards RIGHT OUTER JOIN white_cards ON white_cards.id = allgamecards.white_id WHERE game_id IS NULL AND white_cards.played = false ORDER BY RANDOM();',
+    [gameId], function(err, result) {
+      var whiteCardDeck = result.rows; //this is the shuffled deck of white cards
+      for (var i = 0; i < players.length; i++) { //loops through the player array
+        var cardsToDraw = gameSettings.whiteCardsRequired - players[i].cardsInHand.length; //sets the number of cards to draw based on how many are needed
+        player = players[i];
+        addCardsToHand(cardsToDraw, whiteCardDeck, player, gameSettings);//takes white cards from the shuffled white deck based on num needed
+        cards = players[i].cardsInHand; //sets cards to the current players hand of cards.
+        for (var j = 0; j < cards.length; j++) { //loops through the players cards and adds them to the database one at a time
+          removeWhiteCardsFromDeck(cards[j].id, gameId); //This adds cards to my database so that I can compare later to ensure no cards that have already been drawn are drawn again.
+        }
       }
-      for (var i = 0; i < player.cardsInHand.length; i++) {
-        player.cardsInHand[i].gameId = gameSettings.gameId;
-        player.cardsInHand[i].roomId = gameSettings.roomId;
-        player.cardsInHand[i].playerName = player.playerName;
-        player.cardsInHand[i].relatedSocket = player.mySocketId;
-      }
-      console.log('Players Cards', player.cardsInHand);
+    });
+  }
+  // ~.:------------>ADD CARDS TO THE PLAYER OBJECT<------------:.~//
+  function addCardsToHand(cardsToDraw, whiteCardDeck, player, gameSettings) {
+    for (i = 0; i < cardsToDraw; i++) {
+      var whiteIndex = Math.floor(Math.random() * whiteCardDeck.length); //selects a white card from the deck at random
+      player.cardsInHand.push(whiteCardDeck[whiteIndex]); //pushes the random card into the players hand
+      whiteCardDeck.splice(whiteIndex, 1); //Removes the random card from the shuffled deck.
     }
-    //~.:------------>REMOVE THE CARDS FROM THE DECK<------------:.~//
-    function removeCardsFromDeck(cardId, gameId){
-      pool.query('INSERT INTO game_white_cards (game_id, white_id) VALUES ($1, $2);',
-              [gameId, cardId], function(err, result) {
-                console.log('Check Database to see if cards were added to the game_white_cards table.');
-            });
+    for (var i = 0; i < player.cardsInHand.length; i++) {
+      player.cardsInHand[i].gameId = gameSettings.gameId;
+      player.cardsInHand[i].roomId = gameSettings.roomId;
+      player.cardsInHand[i].playerName = player.playerName;
+      player.cardsInHand[i].relatedSocket = player.mySocketId;
     }
+    console.log('Players Cards', player.cardsInHand);
+  }
+  //~.:------------>REMOVE THE CARDS FROM THE DECK<------------:.~//
+  function removeWhiteCardsFromDeck(cardId, gameId){
+    pool.query('INSERT INTO game_white_cards (game_id, white_id) VALUES ($1, $2);',
+    [gameId, cardId], function(err, result) {
+      console.log('Check Database to see if cards were added to the game_white_cards table.');
+    });
+  }
+  //****************************//
+  //                            //
+  //    Black Card Functions    //
+  //                            //
+  //****************************//
+  //~.:------------>DRAW A BLACK CARD<------------:.~//
+  function drawBlackCard(gameSettings, players){
+    gameId = gameSettings.gameId;
+    pool.query('WITH  allgamecards AS (SELECT * FROM game_black_cards WHERE game_black_cards.game_id = $1) SELECT * FROM allgamecards RIGHT OUTER JOIN black_cards ON black_cards.id = allgamecards.black_id WHERE game_id IS NULL AND pick = 1 ORDER BY RANDOM() LIMIT 1;',
+    [gameId], function(err, result) {
+      var currentBlackCard = result.rows[0];
+      blackCardId = result.rows[0].id;
+      //emit the black card to the sockets as well as the host.
+      //change the currentblackcard in the games settings (database)?
+      //remove the black card from the deck.
+      removeBlackCardFromDeck(blackCardId, gameId);
+    });
+  }
+  //~.:------------>REMOVE BLACK CARD FROM 'DECK'<------------:.~//
+  function removeBlackCardFromDeck(blackCardId, gameId){
+    pool.query('INSERT INTO game_black_cards (game_id, black_id) VALUES ($1, $2);',
+    [gameId, blackCardId], function(err, result) {
+      console.log('BLACKCARD: Check Database to see if cards were added to the game_white_cards table.');
+    });
+  }
 
-//DRAW WHITE CARDS
-//GIVE THEM TO THE PLAYER
-
-//SET THE BLACK CARD
-//SET THE CZAR
-//INITIALIZE PLAYER VIEWS
 
 
   // function allPlayersConnected(players, gameSettings){
