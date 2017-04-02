@@ -126,14 +126,17 @@ exports.initGame = function(sio, socket){
           cardsInHand: [],
         }
       }
-      // console.log('players', players);
-      // console.log('game settings', gameSettings);
-      drawWhiteCardDeck(gameSettings, players);
-      drawBlackCard(gameSettings, players);
-      //SET THE CZAR
-      //INITIALIZE PLAYER VIEWS
+      //SET THE CZAR // UPDATE VIEWS
+      drawWhiteCardDeck(gameSettings, players); //LET PLAYERS KNOW
+      drawBlackCard(gameSettings, players); //LET PLAYERS KNOW
+      setCzar(gameSettings, players); //LET THE PLAYERS KNOW . . .
+      // for (var i = 0; i < players.length; i++) {
+      //   io.to(players[i].mySocketId).emit('showPlayerView');
+      // }
+      io.to(gameSettings.hostSocketId).emit('gameStartHost', players);
     });
   }
+
   //****************************//
   //                            //
   //    White Card Functions    //
@@ -170,6 +173,7 @@ exports.initGame = function(sio, socket){
       player.cardsInHand[i].relatedSocket = player.mySocketId;
     }
     console.log('Players Cards', player.cardsInHand);
+    //emit cards to the correct player.
   }
   //~.:------------>REMOVE THE CARDS FROM THE DECK<------------:.~//
   function removeWhiteCardsFromDeck(cardId, gameId){
@@ -196,6 +200,9 @@ exports.initGame = function(sio, socket){
       //remove the black card from the deck.
       removeBlackCardFromDeck(blackCardId, gameId);
       updateCurrentBlackCardInDatabase(blackCardText, gameId);
+      //send the black card info to ALL players.
+      io.sockets.in(gameSettings.roomId).emit('drawNewBlackCard', blackCardText); //ok
+
     });
   }
   //~.:------------>REMOVE BLACK CARD FROM 'DECK'<------------:.~//
@@ -204,14 +211,51 @@ exports.initGame = function(sio, socket){
     [gameId, blackCardId], function(err, result) {
     });
   }
+  //~.:------------>ADD BLACK CARD TO 'GAME SETTINGS'<------------:.~//
   function updateCurrentBlackCardInDatabase(blackCardText, gameId){
     pool.query('UPDATE game_init SET currentBlackCard_id = $1 WHERE id = $2;',
     [gameId, blackCardText], function(err, result) {
     });
   }
+  /* **************************
+  *                           *
+  *       CZAR FUNCTIONS      *
+  *                           *
+  ***************************** */
+    function setCzar(gameSettings, players) { //hard coded
+      if (players[0].isCzar){
+        players[0].isCzar = false;
+        players[1].isCzar = true;
+        console.log('Player 2 is czar');
 
+      } else if (players[1].isCzar){
+        players[1].isCzar = false;
+        // game.players[2].isCzar = true;
+        players[0].isCzar = true;
+        console.log(' LOOPS, Player 1 is czar');
 
+      }
+      // else if (game.players[2].isCzar){
+      //   game.players[2].isCzar = false;
+      //   game.players[3].isCzar = true;
+      // }else if (game.players[3].isCzar){
+      //   game.players[3].isCzar = false;
+      //   game.players[0].isCzar = true;
+      // }
+      else {
+        players[0].isCzar = true;
+        console.log('player 1 is czar');
 
+      }
+      //update database?
+      // socket.emit('findCzar', game.players)
+    }
+
+  /* ********************************
+  *                                 *
+  *       GAME LOGIC FUNCTIONS      *
+  *                                 *
+  ******************************** */
   // function allPlayersConnected(players, gameSettings){
   //   console.log(players, gameSettings);
   // }

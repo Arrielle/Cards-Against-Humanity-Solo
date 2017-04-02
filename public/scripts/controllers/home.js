@@ -5,16 +5,18 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
 
   self.link = window.location.origin;
 
-    //********************************//
-    //                                //
-    //        Socket Functions        //
-    //                                //
-    //********************************//
-    var socket = io.connect();
+  //********************************//
+  //                                //
+  //        Socket Functions        //
+  //                                //
+  //********************************//
+  var socket = io.connect();
 
   // socket.on('newGameCreated', onNewGameCreated );
   socket.on('gameInitView', gameInitView);
   socket.on('playerJoinedRoom', playerJoinedRoomNotice);
+  // socket.on('drawNewBlackCard', displayBlackCard);
+  socket.on('gameStartHost', gameStartHostView);
   // socket.on('checkingIfPlayersReady', checkingIfPlayersReady);
   //   socket.on('dealWhiteCards', dealWhiteCards);
   //   socket.on('showCzarView', czarView);
@@ -25,20 +27,20 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //   // socket.on('sendCardsToServer', sendCardsToServer)
   //ALERTS
   socket.on('errorAlert', error);
-  socket.on('message', logItOut);
+  // socket.on('message', logItOut);
   //VIEW CHANGES
-  socket.on('changeHostView', onChangeHostView);
-  socket.on('changePlayerView', onChangePlayerView);
+  // socket.on('changeHostView', onChangeHostView);
+  // socket.on('changePlayerView', onChangePlayerView);
 
   function logItOut(message){
     console.log(message.text);
   }
 
-    //*******************************//
-    //                               //
-    //    Host Join/Game Creation    //
-    //                               //
-    //*******************************//
+  //*******************************//
+  //                               //
+  //    Host Join/Game Creation    //
+  //                               //
+  //*******************************//
 
   //Emits Data to the Server and Spins up a New Socket Room
   self.onCreateClick = function () {
@@ -55,11 +57,18 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     self.roomId = thisRoomId;
   }
 
-    //*******************//
-    //                   //
-    //    Player Join    //
-    //                   //
-    //*******************//
+  function gameStartHostView(){
+    $scope.$apply(applyNewHostView());
+  }
+
+  function applyNewHostView(){
+    self.gameTemplate = true;
+  }
+  //*******************//
+  //                   //
+  //    Player Join    //
+  //                   //
+  //*******************//
 
   //When a player clicks Join a Game the Join Game view is displayed.
   self.playerJoinView = function(){
@@ -72,8 +81,8 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     socket.emit('playerJoinGame', userData);
   }
   //Error if the user tries to join a room that is full, or non existant.
-  //Should also alert if the username is empty
-  //Should also alert if the username is already in use in THIS room.
+  //Should also alert if the username is empty?
+  //Should also alert if the username is already in use?
   function error(data) {
     swal({
       title: 'Oops...',
@@ -82,116 +91,49 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     });
   }
 
-  function findGameInformation(gameId){
-    gameIdObject = {gameId: gameId};
-    console.log('object?', gameIdObject.gameId);
-    //FINDS ALL PERTINENT GAME INFORMATION
-    $http({
-      method: 'POST',
-      url: '/game/findGame',
-      data: gameIdObject
-    }).then(function(response){
-      console.log('RESPONSE AT GAME INFORMATION', response);
-
-      //consider emitting this logic to the server so that the client does not have access to the information?
-      //then from the server emit something back to draw the cards?
-
-
-      var maxRoomSize = gameSettings.numberOfPlayers;
-      console.log('MAX ROOM SIZE', maxRoomSize);
-      //NOW take the players and give both of them ten cards
-      if(players.length == maxRoomSize){
-        console.log('i hit my if!');
-        console.log('players in game?', players);
-        //emit to server the new playerArray along with the hostID
-        // socket.emit('allPlayersConnected', gameSettings, players);
-        // drawWhiteCardDeck(gameSettings, players);
-      }
-    });
-  }
-  //
-  function drawWhiteCardDeck(gameSettings, players){ //Give this function the player array
-    objectToSend = {gameId: gameSettings.gameId}; //I need to send the database ID
-    $http({
-      method: 'POST',
-      url: '/allWhiteCards',
-      data: objectToSend //database id object
-    }).then(function(response){
-      var whiteCardDeck = response.data; //this is the shuffled deck of white cards
-
-      socket.emit('dealCardsToPlayers', gameSettings, players, whiteCardDeck);
-
-      //emit the cards to the server
-      //draw cards and push them into the player object
-      //emit back to the host so it can remove the correct cards from the database
-      //sounds good to meeee ?
-    });
-  }
-  //
-  //   function addCardsToHand(numberCardsToDraw, deck, player, databaseId, game) {
-  //     console.log('database id????', databaseId);
-  //     var playerName = player.playerName;
-  //     for (i = 0; i < numberCardsToDraw; i++) {
-  //       var whiteIndex = Math.floor(Math.random() * deck.length); //selects a white card from the deck at random
-  //       player.cardsInHand.push(deck[whiteIndex]); //pushes the random card into the players hand
-  //       deck.splice(whiteIndex, 1); //Removes the random card from the shuffled deck.
-  //     }
-  //     for (var i = 0; i < player.cardsInHand.length; i++) {
-  //       player.cardsInHand[i].databaseId = databaseId;
-  //       player.cardsInHand[i].gameId = game.gameId;
-  //       player.cardsInHand[i].playerName = player.playerName;
-  //       player.cardsInHand[i].cardsToPick = game.cardsToPick;
-  //     }
-  //     socket.emit('findPlayersCards', game.players);
-  //   }
-  //
-
-  //
   function playerJoinedRoomNotice(player) {
     // When a player joins a room, do the updateWaitingScreen function
     // Need to upgrade to angular.
-      $('#playersWaiting').append('<p/>Player ' + player.playerName + ' joined the game.</p>');
-      $('#playerWaitingMessage').append('<p>Joined Game ' + player.playerName + '. Waiting on other players... Please wait for the game to begin.</p>');
+    $('#playersWaiting').append('<p/>Player ' + player.playerName + ' joined the game.</p>');
+    $('#playerWaitingMessage').append('<p>Joined Game ' + player.playerName + '. Waiting on other players... Please wait for the game to begin.</p>');
   }
 
-
-  //
   //   //************************//
   //   //                        //
   //   //    GAME START VIEWS    //
   //   //                        //
   //   //************************//
   //
-  function onChangeHostView(gameData, hostViewData){
-
-    console.log('room id? ', gameData.roomId, 'players? ', gameData.players);
-
-    postNewGameToDatabase(gameData.roomId, gameData.players, gameData);
-    //changes the hosts view
-    $scope.$apply(changeHostView(gameData, hostViewData));
-  }
+  // function onChangeHostView(gameData, hostViewData){
   //
-  function changeHostView(gameData){
-    // console.log('WHAT IS THIS GAME', game.currentBlackCard);
-    self.hostGameTemplate = hostViewData.hostGameTemplate;
-    self.gameSetup.isStarted = hostViewData.isStarted;
-    self.gameTemplate = hostViewData.gameTemplate;
-    self.players = gameData.players;
-    // setCurrentBlackCard(game.currentBlackCard)
-  }
+  //   console.log('room id? ', gameData.roomId, 'players? ', gameData.players);
+  //
+  //   postNewGameToDatabase(gameData.roomId, gameData.players, gameData);
+  //   //changes the hosts view
+  //   $scope.$apply(changeHostView(gameData, hostViewData));
+  // }
+  //
+  // function changeHostView(gameData){
+  //   // console.log('WHAT IS THIS GAME', game.currentBlackCard);
+  //   self.hostGameTemplate = hostViewData.hostGameTemplate;
+  //   self.gameSetup.isStarted = hostViewData.isStarted;
+  //   self.gameTemplate = hostViewData.gameTemplate;
+  //   self.players = gameData.players;
+  //   // setCurrentBlackCard(game.currentBlackCard)
+  // }
   //
   //   function setCurrentBlackCard(blackCard){
   //     self.currentBlackCard = blackCard;
   //   }
   //
-  function onChangePlayerView(){
-    $scope.$apply(applyPlayerView());
-  }
-  //
-  function applyPlayerView(){
-    self.playerGameTemplate = true; //true
-    self.playerJoining = false; //false
-  }
+  // function onChangePlayerView(){
+  //   $scope.$apply(applyPlayerView());
+  // }
+  // //
+  // function applyPlayerView(){
+  //   self.playerGameTemplate = true; //true
+  //   self.playerJoining = false; //false
+  // }
   //
   //   //**********************************************************//
   //   //                                                          //
