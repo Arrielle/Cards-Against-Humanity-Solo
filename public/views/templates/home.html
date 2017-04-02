@@ -33,7 +33,8 @@
 //   PLAYER JOIN TEMPLATE    //    || This is the view when someone clicks Join a Game
 //***************************//
 -->
-<div ng-show ="hc.playerJoining">
+<div ng-show ="hc.playerJoining && !hc.playerGameTemplate">
+
   <div id="header_container">
       <div id="header">
         <h1>Cards<br>Against<br>Humanity</h1>
@@ -66,11 +67,10 @@
     <div ng-show="!hc.playerIsCzar" class = "nonCzar">
       <div id="header_container_card">
           <div id="header">
-            <!-- {{hc.currentBlackCard.text}} -->
-            <h4>{{hc.playerObject.playersObject.playerName}} - Pick the card you'd like to send to the Czar.</h4>
+            {{hc.currentBlackCard}}
           </div>
       </div>
-            <div class="card" ng-repeat="card in hc.playerObject.playersObject.cardsInHand" ng-class="{'card':true,'selectedCard' : card.selected}" ng-click="hc.selectCard(card, hc.playerObject.playersObject.cardsInHand, hc.playerObject.playersObject.playerName, hc.playerObject.playersObject)">
+            <div class="card" ng-repeat="card in hc.player.cardsInHand" ng-class="{'card':true,'selectedCard' : card.selected}" ng-click="hc.selectCard(card, hc.player.cardsInHand, hc.player.playerName, hc.player)">
         {{card.text}}
       </div>
       <button ng-hide="hc.playerDone" ng-click="hc.sendCardsToCzar(hc.playerObject.playersObject.cardsInHand, hc.playerObject.playersObject)" class="btn btn-primary btn-lg outline sticky_button" type="button" name="button">Send Card</button>
@@ -140,14 +140,14 @@
       </div>
       <div class = "col-xs-6 col-md-9">
         <h4>{{player.playerName}}</h4>
-        <h5>{{player.playerScore}}</h5>
+        <h5>{{player.score}}</h5>
       </div>
     </div>
   </div>
   <br>
   <div class ="row">
     <div id = "activeBlackCard" ng-hide="hc.gameSetup.isOver" ng-model="hc.currentBlackCard.text" class ="col-md-12">
-      {{hc.currentBlackCard.text}}
+      {{hc.currentBlackCard}}
       <!-- <p>Here is where the black card text will go when I get the database up and running.</p> -->
     </div>
   </div>

@@ -50,8 +50,9 @@ exports.initGame = function(sio, socket){
   function playerJoinGame(player) {
     var room = gameSocket.adapter.rooms[player.roomId]; //the room that the player is joining
     var playerName = player.playerName; //The players name
-    var maxRoomSize = 3; //HARD CODED
+    var maxRoomSize = 2; //HARD CODED
     if( room != undefined && room.length <= maxRoomSize){ //check the room to see if it exists and whether or not it is full.
+      console.log(room.length, '||', maxRoomSize);
       console.log('1 The room exists! Entering room ', player.roomId,'.');
       player = {mySocketId: this.id, roomId: player.roomId, playerName: player.playerName} //player object to pass to queries
       // Join the room
@@ -70,7 +71,6 @@ exports.initGame = function(sio, socket){
 
   function addPlayersToGame(player){
     //~.:------------>INSERTING THE PLAYER INTO THE PLAYERS TABLE<------------:.~//
-    console.log('player object before insert', player);
     pool.query('INSERT INTO players_in_game(player_name, room_id, mySocket_id) VALUES ($1, $2, $3);',
     [player.playerName, player.roomId, player.mySocketId], function(err, result) {
       //~.:------------>UPDATES THE USERS GAME ID<------------:.~//
@@ -117,6 +117,7 @@ exports.initGame = function(sio, socket){
       for (var i = 0; i < result.rows.length; i++) {
         players[i] = {
           playerName: result.rows[i].player_name,
+          gameId: gameId,
           mySocketId: result.rows[i].mysocket_id,
           score: result.rows[i].score,
           isCzar: result.rows[i].isczar,
@@ -172,14 +173,12 @@ exports.initGame = function(sio, socket){
       player.cardsInHand[i].playerName = player.playerName;
       player.cardsInHand[i].relatedSocket = player.mySocketId;
     }
-    console.log('Players Cards', player.cardsInHand);
-    //emit cards to the correct player.
+    io.to(player.mySocketId).emit('drawWhiteCards', player);
   }
   //~.:------------>REMOVE THE CARDS FROM THE DECK<------------:.~//
   function removeWhiteCardsFromDeck(cardId, gameId){
     pool.query('INSERT INTO game_white_cards (game_id, white_id) VALUES ($1, $2);',
     [gameId, cardId], function(err, result) {
-      console.log('Check Database to see if cards were added to the game_white_cards table.');
     });
   }
   //****************************//
@@ -202,7 +201,6 @@ exports.initGame = function(sio, socket){
       updateCurrentBlackCardInDatabase(blackCardText, gameId);
       //send the black card info to ALL players.
       io.sockets.in(gameSettings.roomId).emit('drawNewBlackCard', blackCardText); //ok
-
     });
   }
   //~.:------------>REMOVE BLACK CARD FROM 'DECK'<------------:.~//
@@ -226,14 +224,17 @@ exports.initGame = function(sio, socket){
       if (players[0].isCzar){
         players[0].isCzar = false;
         players[1].isCzar = true;
-        console.log('Player 2 is czar');
-
+        currentCzar = players[1]
+        io.to(players[0].mySocketId).emit('setCzar', false);
+        io.to(players[1].mySocketId).emit('setCzar', true);
       } else if (players[1].isCzar){
         players[1].isCzar = false;
         // game.players[2].isCzar = true;
         players[0].isCzar = true;
-        console.log(' LOOPS, Player 1 is czar');
 
+        io.to(players[1].mySocketId).emit('setCzar', false);
+        io.to(players[0].mySocketId).emit('setCzar', true);
+        currentCzar = players[0]
       }
       // else if (game.players[2].isCzar){
       //   game.players[2].isCzar = false;
@@ -244,11 +245,22 @@ exports.initGame = function(sio, socket){
       // }
       else {
         players[0].isCzar = true;
-        console.log('player 1 is czar');
-
+        io.to(players[0].mySocketId).emit('setCzar', true);
+        currentCzar = players[0];
       }
-      //update database?
-      // socket.emit('findCzar', game.players)
+      //update database to let it know which player is czar.
+      updateCzarDb(currentCzar, gameSettings.gameId);
+    }
+
+    function updateCzarDb(currentCzar, gameId){
+      pool.query('UPDATE players_in_game SET isczar = FALSE WHERE game_id = $1;',
+      [gameId], function(err, result) {
+        console.log('UPPER czar land?', result);
+        pool.query('UPDATE players_in_game SET isczar = TRUE WHERE game_id = $1 AND mysocket_id = $2;',
+        [gameId, currentCzar.mySocketId], function(err, result) {
+          console.log('whatisupinczarland', result);
+        });
+      });
     }
 
   /* ********************************

@@ -1,7 +1,6 @@
 myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   console.log('home controller running');
   var self = this;
-  // var socket = io();
 
   self.link = window.location.origin;
 
@@ -15,26 +14,15 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   // socket.on('newGameCreated', onNewGameCreated );
   socket.on('gameInitView', gameInitView);
   socket.on('playerJoinedRoom', playerJoinedRoomNotice);
-  // socket.on('drawNewBlackCard', displayBlackCard);
+  socket.on('drawNewBlackCard', displayBlackCard);
   socket.on('gameStartHost', gameStartHostView);
-  // socket.on('checkingIfPlayersReady', checkingIfPlayersReady);
-  //   socket.on('dealWhiteCards', dealWhiteCards);
-  //   socket.on('showCzarView', czarView);
-  //   socket.on('czarCards', updateCzarView);
-  //   socket.on('updatePlayerView', updatePlayerView);
-  //   socket.on('newRound', newRound);
-  // socket.on('postPlayer', postPlayer);
-  //   // socket.on('sendCardsToServer', sendCardsToServer)
-  //ALERTS
+  socket.on('drawWhiteCards', drawWhiteCards);
   socket.on('errorAlert', error);
   // socket.on('message', logItOut);
-  //VIEW CHANGES
-  // socket.on('changeHostView', onChangeHostView);
-  // socket.on('changePlayerView', onChangePlayerView);
-
-  function logItOut(message){
-    console.log(message.text);
-  }
+  //
+  // function logItOut(message){
+  //   console.log(message.text);
+  // }
 
   //*******************************//
   //                               //
@@ -57,13 +45,6 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     self.roomId = thisRoomId;
   }
 
-  function gameStartHostView(){
-    $scope.$apply(applyNewHostView());
-  }
-
-  function applyNewHostView(){
-    self.gameTemplate = true;
-  }
   //*******************//
   //                   //
   //    Player Join    //
@@ -81,8 +62,6 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     socket.emit('playerJoinGame', userData);
   }
   //Error if the user tries to join a room that is full, or non existant.
-  //Should also alert if the username is empty?
-  //Should also alert if the username is already in use?
   function error(data) {
     swal({
       title: 'Oops...',
@@ -98,43 +77,39 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     $('#playerWaitingMessage').append('<p>Joined Game ' + player.playerName + '. Waiting on other players... Please wait for the game to begin.</p>');
   }
 
-  //   //************************//
-  //   //                        //
-  //   //    GAME START VIEWS    //
-  //   //                        //
-  //   //************************//
-  //
-  // function onChangeHostView(gameData, hostViewData){
-  //
-  //   console.log('room id? ', gameData.roomId, 'players? ', gameData.players);
-  //
-  //   postNewGameToDatabase(gameData.roomId, gameData.players, gameData);
-  //   //changes the hosts view
-  //   $scope.$apply(changeHostView(gameData, hostViewData));
-  // }
-  //
-  // function changeHostView(gameData){
-  //   // console.log('WHAT IS THIS GAME', game.currentBlackCard);
-  //   self.hostGameTemplate = hostViewData.hostGameTemplate;
-  //   self.gameSetup.isStarted = hostViewData.isStarted;
-  //   self.gameTemplate = hostViewData.gameTemplate;
-  //   self.players = gameData.players;
-  //   // setCurrentBlackCard(game.currentBlackCard)
-  // }
-  //
-  //   function setCurrentBlackCard(blackCard){
-  //     self.currentBlackCard = blackCard;
-  //   }
-  //
-  // function onChangePlayerView(){
-  //   $scope.$apply(applyPlayerView());
-  // }
-  // //
-  // function applyPlayerView(){
-  //   self.playerGameTemplate = true; //true
-  //   self.playerJoining = false; //false
-  // }
-  //
+  //****************************//
+  //                            //
+  //    GAME INITILIZE VIEWS    //
+  //                            //
+  //****************************//
+
+  function gameStartHostView(players){
+    $scope.$apply(applyNewHostView(players));
+  }
+
+  function applyNewHostView(players){
+    self.gameTemplate = true;
+    self.players = players;
+  }
+
+  function displayBlackCard(blackCardText){
+    $scope.$apply(applyBlackCard(blackCardText));
+  }
+
+  function applyBlackCard(blackCardText){
+    self.currentBlackCard = blackCardText;
+  }
+
+  function drawWhiteCards(player){
+    $scope.$apply(applyWhiteCards(player));
+  }
+
+  function applyWhiteCards(player){
+    // self.cardsInHand = player.cardsInHand;
+    self.player = player;
+    self.playerGameTemplate = true;
+  }
+
   //   //**********************************************************//
   //   //                                                          //
   //   //                     GAME LOGIC START                     //
