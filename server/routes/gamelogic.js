@@ -11,36 +11,37 @@ exports.initGame = function(sio, socket){
   gameSocket = socket;
   //HANDSHAKE!
   gameSocket.emit('connected', { message: "You are connected!" });
-  //NEED DISCONNECT HANDLER
   //INITIALIZING GAME
   gameSocket.on('hostCreateNewGame', hostCreateNewGame);
   gameSocket.on('playerJoinGame', playerJoinGame);
   //GAME LOGIC
   gameSocket.on('dealCardsToPlayers', dealCardsToPlayers);
 
-  // gameSocket.on('hostRoomFull', hostPrepareGame);
-  // gameSocket.on('changeHostView', changeHostView);
-  // gameSocket.on('changePlayerView', changePlayerView);
-  // gameSocket.on('findPlayersCards', findPlayersCards);
-  // gameSocket.on('setCzar', setCzar);
-  // gameSocket.on('selectRoundWinner', selectRoundWinner);
-  // gameSocket.on('findCzar', findCzar);
-  // gameSocket.on('cardsToJudge', cardsToJudge);
-  // gameSocket.on('playerHideButton', changePlayerStatus);
-  // gameSocket.on('sendCardsToCzar', sendCardsToServer);
-  // gameSocket.on('hostCountdownFinished', hostStartGame);
-  // gameSocket.on('hostNextRound', hostNextRound);
+  //   // gameSocket.on('hostRoomFull', hostPrepareGame);
+  //   // gameSocket.on('changeHostView', changeHostView);
+  //   // gameSocket.on('changePlayerView', changePlayerView);
+  //   // gameSocket.on('findPlayersCards', findPlayersCards);
+  //   // // gameSocket.on('setCzar', setCzar);
+  //   // gameSocket.on('selectRoundWinner', selectRoundWinner);
+  //   // gameSocket.on('findCzar', findCzar);
+  //   // // gameSocket.on('cardsToJudge', cardsToJudge);
+  //   // // gameSocket.on('playerHideButton', changePlayerStatus);
+  //   // gameSocket.on('sendCardsToCzar', sendCardsToServer);
+  //   // // gameSocket.on('hostCountdownFinished', hostStartGame);
+  //   // // gameSocket.on('hostNextRound', hostNextRound);
 
-  // Player Events
-  // gameSocket.on('playerAnswer', playerAnswer);
-  // gameSocket.on('playerRestart', playerRestart);
-
-  /* ****************************************
-  *                                         *
-  *       ON CREATE A NEW GAME CLICK        *
-  *                                         *
-  **************************************** */
-  // The 'START' button was clicked and 'hostCreateNewGame' event occurred.
+  //   //
+  //   // // Player Events
+  //   // gameSocket.on('playerAnswer', playerAnswer);
+  //   // gameSocket.on('playerRestart', playerRestart);
+  // var numPlayers = 2;
+  // var pointsToWin = 10;
+  // /* ****************************************
+  // *                                         *
+  // *       ON CREATE A NEW GAME CLICK        *
+  // *                                         *
+  // **************************************** */
+  // // The 'START' button was clicked and 'hostCreateNewGame' event occurred.
   function hostCreateNewGame() {
     // Create a unique Socket.IO Room
     var thisRoomId = ( Math.random() * 100000 ) | 0;
@@ -48,33 +49,52 @@ exports.initGame = function(sio, socket){
     // Join the Room and wait for the players
     this.join(thisRoomId.toString());
     // Send the host to the database.
-    client.connect();
     client.query('INSERT INTO game_init (room_id, hostSocket_id) VALUES ($1, $2) returning id;', [thisRoomId, hostSocketId]);
     this.emit('gameInitView', thisRoomId);
     console.log('Host Is Prepping Game: ', thisRoomId, hostSocketId);
   };
 
-  /* ****************************
-  *                             *
-  *       Player FUNCTIONS      *
-  *                             *
-  **************************** */
-
+  // /* ****************************
+  // *                             *
+  // *       Player FUNCTIONS      *
+  // *                             *
+  // **************************** */
+  //
   // // A player clicked the 'START GAME' button.
   // // Attempt to connect them to the room that matches the gameId entered by the player.
-  function playerJoinGame(player, numPlayers) {
-    var numPlayers = 2; //Hard Coded players
+  // // data Contains data entered via player's input - playerName and gameId.
+  // var playerArray = []; //BAD!, I don't know what to do to replace this...
+  function playerJoinGame(player) {
     var room = gameSocket.adapter.rooms[player.roomId]; //the room that the player is joining
-    var maxRoomSize = (numPlayers + 1);//socket room has the max players and host.
-    //check the room to see if it exists and whether or not it is full.
-    if( room != undefined && room.length <= maxRoomSize){
+    var playerName = player.playerName;
+    var maxRoomSize = 3; //HARD CODED
+
+    if( room != undefined && room.length <= maxRoomSize){ //check the room to see if it exists and whether or not it is full.
       console.log('1 The room exists! Entering room ', player.roomId,'.');
-      var player = {mySocketId: this.id, roomId: player.roomId,playerName: player.playerName};
-      this.join(player.roomId); // Join the room
-      // Emit an event notifying the clients that the player has joined the room
-      io.sockets.in(player.roomId).emit('playerJoinedRoom', player);
-      insertPlayers(player);
-      updatePlayers(player);
+      //Initializing the Player Object for Funzies??
+      player = {
+        mySocketId: this.id,
+        roomId: player.roomId,
+        playerName: player.playerName
+      }
+      // Join the room
+      this.join(player.roomId);
+
+      console.log('2 Room length?', room.length);
+      // // Emit an event notifying the clients that the player has joined the room
+      io.sockets.in(player.roomId).emit('playerJoinedRoom', player); //ok
+      client.connect();
+      // Inserts new player into the players table database.
+      client.query('INSERT INTO players_in_game(player_name, room_id, mySocket_id) VALUES ($1, $2, $3);',
+      [player.playerName, player.roomId, player.mySocketId]);
+      // Sets the game_id in the players table database.
+      client.query('UPDATE players_in_game AS p SET game_id = g.id FROM game_init AS g WHERE p.room_id = g.room_id AND g.room_id = $1 RETURNING g.id',
+      [player.roomId], function(err, result) {
+      gameId = result.rows[0].id;
+      console.log('okay then', gameId);
+      });
+
+      console.log('everything, is gonna be all right.');
     } else if (room == undefined){ //The room does not exist.
       console.log('The cake is a lie.');
       this.emit('errorAlert', {message: "Sorry about that! It looks like this room does not exist."} );
@@ -83,58 +103,44 @@ exports.initGame = function(sio, socket){
     }
   }
 
-  function insertPlayers(player){
-    // Inserts new player into the players table database.
-    client.query('INSERT INTO players_in_game(player_name, room_id, mySocket_id) VALUES ($1, $2, $3);',
-    [player.playerName, player.roomId, player.mySocketId]);
-  }
-
-  function updatePlayers(player){
-    // Sets the game_id in the players table database.
-    client.query('UPDATE players_in_game AS p SET game_id = g.id FROM game_init AS g WHERE p.room_id = g.room_id AND g.room_id = $1 RETURNING g.id',
-    [player.roomId], function(err, result) {
-      gameId = result.rows[0].id;
-      retrieveGameData(gameId)
-    });
-  }
-
-  function retrieveGameData(gameId){
-    client.query('SELECT * FROM game_init LEFT OUTER JOIN players_in_game ON game_init.id = players_in_game.game_id WHERE game_id = $1;',
-    [gameId], function(err, result) {
-      console.log(result.rows[0]);
-      gameSettings = {
-        gameId: result.rows[0].id,
-        roomId: result.rows[0].room_id,
-        hostSocketId: result.rows[0].hostsocket_id,
-        currentBlackCard: result.rows[0].currentblackcard_id,
-        whiteCardsRequired: result.rows[0].whitecardsrequired,
-        cardsToPick: result.rows[0].cardstopick,
-        currentRound: result.rows[0].currentround,
-        pointsToWin: result.rows[0].pointstowin,
-        isStarted: result.rows[0].isstarted,
-        isOver: result.rows[0].isover,
-        numberOfPlayers: 2 //hard coded
-      }
-
-      var players = [];
-      for (var i = 0; i < result.rows.length; i++) {
-        players[i] = {
-          playerName: result.rows[i].player_name,
-          mySocketId: result.rows[i].mysocket_id,
-          score: result.rows[i].score,
-          isCzar: result.rows[i].isczar,
-          isReady: result.rows[i].isready,
-          isRoundWinner: result.rows[i].isroundwinner,
-          isGameWinner: result.rows[i].isgamewinner,
-          cardsInHand: [],
-        }
-      }
-      console.log('How many players?', players.length, 'players', players);
-      //if the players in the game == numPlayers
-      //draw cards for each player? later send
-
-    });
-  }
+  // client.query('SELECT * FROM game_init LEFT OUTER JOIN players_in_game ON game_init.id = players_in_game.game_id WHERE game_id = $1;',
+  // [gameId], function(err, result) {
+  //   if(err){
+  //     console.log(err);
+  //     res.sendStatus(500);
+  //   }else{
+  //     console.log('game Info', result.rows[0]);
+  //     gameSettings = {
+  //       gameId: result.rows[0].id,
+  //       roomId: result.rows[0].room_id,
+  //       hostSocketId: result.rows[0].hostsocket_id,
+  //       currentBlackCard: result.rows[0].currentblackcard_id,
+  //       whiteCardsRequired: result.rows[0].whitecardsrequired,
+  //       cardsToPick: result.rows[0].cardstopick,
+  //       currentRound: result.rows[0].currentround,
+  //       pointsToWin: result.rows[0].pointstowin,
+  //       isStarted: result.rows[0].isstarted,
+  //       isOver: result.rows[0].isover,
+  //       numberOfPlayers: 2 //hard coded
+  //     }
+  //     console.log('game settings', gameSettings);
+  //     var players = [];
+  //
+  //     for (var i = 0; i < result.rows[0].numberOfPlayers; i++) {
+  //       players[i] = {
+  //         playerName: result.rows[i].player_name,
+  //         mySocketId: result.rows[i].mysocket_id,
+  //         score: result.rows[i].score,
+  //         isCzar: result.rows[i].isczar,
+  //         isReady: result.rows[i].isready,
+  //         isRoundWinner: result.rows[i].isroundwinner,
+  //         isGameWinner: result.rows[i].isgamewinner,
+  //         cardsInHand: [],
+  //       }
+  //     }
+  //   }
+  //   console.log('players?', players);
+  // });
 
   function allPlayersConnected(players, gameSettings){
     console.log(players, gameSettings);

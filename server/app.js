@@ -27,8 +27,12 @@ app.use(express.static('./public'));
 app.use(bodyParser.json());
 
 // Listen for Socket.IO Connections. Once connected, starts the game logic.
-io.sockets.on('connection', function (socket) {
-    cah.initGame(io, socket);
+// io.sockets.on('connection', function(socket){
+//   cah.initGame(io, socket);
+// });
+
+io.on('connection', function(socket){
+  cah.initGame(io, socket);
 });
 
 //Middleware

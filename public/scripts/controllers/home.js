@@ -1,16 +1,17 @@
 myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   console.log('home controller running');
   var self = this;
-  var socket = io();
+  // var socket = io();
 
   self.link = window.location.origin;
-  //
-  //   //********************************//
-  //   //                                //
-  //   //        Socket Functions        //
-  //   //                                //
-  //   //********************************//
-  //
+
+    //********************************//
+    //                                //
+    //        Socket Functions        //
+    //                                //
+    //********************************//
+    var socket = io.connect();
+
   // socket.on('newGameCreated', onNewGameCreated );
   socket.on('gameInitView', gameInitView);
   socket.on('playerJoinedRoom', playerJoinedRoomNotice);
@@ -24,9 +25,14 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //   // socket.on('sendCardsToServer', sendCardsToServer)
   //ALERTS
   socket.on('errorAlert', error);
+  socket.on('message', logItOut);
   //VIEW CHANGES
   socket.on('changeHostView', onChangeHostView);
   socket.on('changePlayerView', onChangePlayerView);
+
+  function logItOut(message){
+    console.log(message.text);
+  }
 
     //*******************************//
     //                               //
@@ -90,7 +96,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       //consider emitting this logic to the server so that the client does not have access to the information?
       //then from the server emit something back to draw the cards?
 
-      
+
       var maxRoomSize = gameSettings.numberOfPlayers;
       console.log('MAX ROOM SIZE', maxRoomSize);
       //NOW take the players and give both of them ten cards
