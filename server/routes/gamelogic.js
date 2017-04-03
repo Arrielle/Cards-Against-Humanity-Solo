@@ -221,8 +221,7 @@ exports.initGame = function(sio, socket){
   //~.:------------>ADD BLACK CARD TO 'GAME SETTINGS'<------------:.~//
   function updateCurrentBlackCardInDatabase(blackCardText, gameId){
     pool.query('UPDATE game_init SET currentBlackCard_id = $1 WHERE id = $2;',
-    [gameId, blackCardText], function(err, result) {
-      console.log('black card update', result);
+    [blackCardText, gameId], function(err, result) {
     });
   }
   /* **************************
