@@ -222,8 +222,10 @@ exports.initGame = function(sio, socket){
   }
   //~.:------------>ADD BLACK CARD TO 'GAME SETTINGS'<------------:.~//
   function updateCurrentBlackCardInDatabase(blackCardText, gameId){
+    // console.log('blackcard', blackCardText, gameId);
     pool.query('UPDATE game_init SET currentBlackCard_id = $1 WHERE id = $2;',
     [blackCardText, gameId], function(err, result) {
+      // console.log('UPDATE', err, result);
     });
   }
   /* **************************
@@ -283,16 +285,43 @@ exports.initGame = function(sio, socket){
   ******************************** */
 
   function cardsToJudge(playerCards, playerObject){
-    console.log('playerCards', playerCards, 'playerObject', playerObject);
+    console.log('playerCards', playerCards[0], 'playerObject', playerObject.playerName, '||', playerObject.mySocketId);
     for (var j = 0; j < playerCards.length; j++) { //loops through the players cards
       if(playerCards[j].selected){ //finds the ones that have been selected
         var cardToSend = playerCards[j];
         playerCards.splice(j, 1); //also splice the same card from the game.players.cardsInHand
         playerObject.cardsInHand = playerCards;
-        io.to(player.mySocketId).emit('sendCards', playerObject);
+        // console.log(playerCards.length);
+        io.to(playerObject.mySocketId).emit('drawWhiteCards', playerObject);
+        sendCardsToCzar(cardToSend);
       }//ends if
     }//ends for
+    // gameIdObject = {gameId: playerCards[0].gameId};
+    // players = [playerObject];
+    // // drawWhiteCardDeck(gameSettings, players)
   }
+
+function sendCardsToCzar(cardToSend){
+  gameId = cardToSend.gameId;
+  cardId = cardToSend.id;
+  cardText = cardToSend.text;
+  sentBy = cardToSend.playerName;
+  relatedSocket = cardToSend.relatedSocket;
+  pool.query('INSERT INTO game_cards_to_judge (game_id, card_id, card_text, sent_by, related_socket) VALUES ($1, $2, $3, $4, $5);',
+  [gameId, cardId, cardText, sentBy, relatedSocket], function(err, result) {
+    console.log(err, result);
+    pool.query('SELECT COUNT(*) FROM game_cards_to_judge WHERE game_id = $1',
+    [gameId], function(err, result) {
+      console.log(err, result);
+      if (result == 1) { //hard coded
+          console.log('hit the if!!');
+      }
+    });
+  });
+}
+
+//when the czar is done selecting cards, delete all of the rows from the game_cards_to_judge table where the gameID is the same.
+
 
 
   // //~.:------------>TIES PLAYER TO CARD THAT WAS SENT<------------:.~//

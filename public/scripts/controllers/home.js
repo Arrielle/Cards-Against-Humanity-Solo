@@ -173,6 +173,28 @@ self.sendCardsToCzar = function(playerCards, playerObject){
   }
 }
 
+// function whiteCardsToSend(playerCards, playerObject){
+//   for (var i = 0; i < game.players.length; i++) { //loops through the players (server)
+//     if (game.players[i].mySocketId == playerObject.mySocketId) { //finds the correct socket/player
+//       // console.log('beforesplice', playerObject.cardsInHand.length);
+//       for (var j = 0; j < playerCards.length; j++) { //loops through the players cards
+//         if(playerCards[j].selected){ //finds the ones that have been selected
+//           game.cardsToJudge.push(playerCards[j]); //adds the card to the cards to judge array.
+//           playerCards.splice(j, 1); //also splice the same card from the game.players.cardsInHand
+//           game.players[i].cardsInHand.splice(j, 1);
+//           playerObject.cardsInHand = game.players[i].cardsInHand;
+//           // console.log('aftersplice', playerObject.cardsInHand.length);
+//           io.to(playerObject.mySocketId).emit('updatePlayerView', true, playerObject);
+//         }//ends if
+//       }//ends for
+//     }
+//   }
+//   for (var i = 0; i < game.cardsToJudge.length; i++) {//changes all cards in the array from selected to unselected.
+//     game.cardsToJudge[i].selected = false;
+//   }//ends for
+//   shuffleArray(game.cardsToJudge); //shuffles the array so that the czar doesn't know who the card came from.
+// }//ends function
+
 //~.:------------>TIES PLAYER TO CARD THAT WAS SENT<------------:.~//
 // function whiteCardsToSend(playerCards, playerObject){
 //   //NEED TO KNOW ABOUT ALL PLAYERS...
