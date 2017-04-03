@@ -18,6 +18,8 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   socket.on('gameStartHost', gameStartHostView);
   socket.on('drawWhiteCards', drawWhiteCards);
   socket.on('sendCards', sendCards);
+  socket.on('czarView', czarView);
+  socket.on('judgementTime', judgementTime);
   socket.on('errorAlert', error);
   // socket.on('message', logItOut);
   //
@@ -119,6 +121,23 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     self.player = player;
   }
 
+  function czarView(isCzar, player){
+    $scope.$apply(applyCzarView(isCzar, player));
+  }
+
+  function applyCzarView(isCzar, player){
+    self.playerIsCzar = isCzar;
+    self.playerGameTemplate = true;
+  }
+
+  function judgementTime(cardsToJudge){
+    $scope.$apply(applyCards(cardsToJudge));
+  }
+
+  function applyCards(cardsToJudge){
+    self.cardsToJudge = cardsToJudge;
+  }
+
   //***********************************//
   //                                   //
   //    SELECTING AND SENDING CARDS    //
@@ -154,7 +173,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
 //~.:------------>SELECT CARD CSS CHANGES WHEN CZAR SELECTING<------------:.~//
 self.selectCardCzar = function(card, cardsInHand){
   card.selected = true; //gives the card that was selected a property of 'selected' and sets it to true.
-  var cardsToPick = self.gameSetup.cardsToPick;  //finds out what the current rounds 'number of cards to pick' is set to
+  var cardsToPick = 1;  //hard coded //finds out what the current rounds 'number of cards to pick' is set to
   var numberOfSelectedCards = checkCardsInHand(cardsInHand);  //Checks to see if the correct number of cards has been chosen
   if (numberOfSelectedCards > cardsToPick){ //if the number of cards selected is > cards to pick, it removes the .selected from all cards in the array.
     for (var i = 0; i < cardsInHand.length; i++) {
@@ -172,6 +191,8 @@ self.sendCardsToCzar = function(playerCards, playerObject){
     self.playerDone = true;
   }
 }
+
+//DECLARE A WINNER!
 
 // function whiteCardsToSend(playerCards, playerObject){
 //   for (var i = 0; i < game.players.length; i++) { //loops through the players (server)

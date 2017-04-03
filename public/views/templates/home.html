@@ -84,7 +84,7 @@
           </div>
       </div>
       <div class="card" ng-repeat="card in hc.cardsToJudge" ng-class="{'card':true,'selectedCard' : card.selected}" ng-click="hc.selectCardCzar(card, hc.cardsToJudge)">
-        {{card.text}}
+        {{card.card_text}}
       </div>
       <button ng-click="hc.selectRoundWinner(hc.cardsToJudge)" class="btn btn-primary btn-lg outline sticky_button" type="button" name="button">Declare Winner</button>
     </div>

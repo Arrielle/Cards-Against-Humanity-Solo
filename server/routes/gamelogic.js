@@ -133,7 +133,6 @@ exports.initGame = function(sio, socket){
       //SET THE CZAR // UPDATE VIEWS
       drawWhiteCardDeck(gameSettings, players); //LET PLAYERS KNOW
       drawBlackCard(gameSettings, players); //LET PLAYERS KNOW
-      setCzar(gameSettings, players); //LET THE PLAYERS KNOW . . .
       // for (var i = 0; i < players.length; i++) {
       //   io.to(players[i].mySocketId).emit('showPlayerView');
       // }
@@ -161,6 +160,7 @@ exports.initGame = function(sio, socket){
           removeWhiteCardsFromDeck(cards[j].id, gameId); //This adds cards to my database so that I can compare later to ensure no cards that have already been drawn are drawn again.
         }
       }
+      setCzar(gameSettings, players); //LET THE PLAYERS KNOW . . .
     });
   }
   // ~.:------------>ADD CARDS TO THE PLAYER OBJECT<------------:.~//
@@ -177,8 +177,7 @@ exports.initGame = function(sio, socket){
       player.cardsInHand[i].relatedSocket = player.mySocketId;
       addCardToDatabaseHand(player.cardsInHand[i].id, player.cardsInHand[i].text, gameSettings.gameId, player.mySocketId);
     }
-    var playerStatus = false;
-    io.to(player.mySocketId).emit('drawWhiteCards', player, playerStatus);
+    io.to(player.mySocketId).emit('drawWhiteCards', player);
   }
   //~.:------------>REMOVE THE CARDS FROM THE DECK<------------:.~//
   function removeWhiteCardsFromDeck(cardId, gameId){
@@ -239,16 +238,13 @@ exports.initGame = function(sio, socket){
     if (players[0].isCzar){
       players[0].isCzar = false;
       players[1].isCzar = true;
+      io.to(players[0].mySocketId).emit('czarView', false);
       currentCzar = players[1]
-      io.to(players[0].mySocketId).emit('setCzar', false);
-      io.to(players[1].mySocketId).emit('setCzar', true);
     } else if (players[1].isCzar){
       players[1].isCzar = false;
       // game.players[2].isCzar = true;
       players[0].isCzar = true;
-
-      io.to(players[1].mySocketId).emit('setCzar', false);
-      io.to(players[0].mySocketId).emit('setCzar', true);
+      io.to(players[1].mySocketId).emit('czarView', false);
       currentCzar = players[0]
     }
     // else if (game.players[2].isCzar){
@@ -260,20 +256,18 @@ exports.initGame = function(sio, socket){
     // }
     else {
       players[0].isCzar = true;
-      io.to(players[0].mySocketId).emit('setCzar', true);
       currentCzar = players[0];
     }
-    console.log(gameSettings, currentCzar);
     //update database to let it know which player is czar.
     updateCzarDb(currentCzar, gameSettings.gameId);
   }
 
   function updateCzarDb(currentCzar, gameId){
-    console.log('Game id and current czar', gameId, '||', currentCzar.mySocketId);
     pool.query('UPDATE players_in_game SET isczar = FALSE WHERE game_id = $1;',
     [gameId], function(err, result) {
       pool.query('UPDATE players_in_game SET isczar = TRUE WHERE game_id = $1 AND mysocket_id = $2;',
       [gameId, currentCzar.mySocketId], function(err, result) {
+        io.to(currentCzar.mySocketId).emit('czarView', true);
 
       });
     });
@@ -294,26 +288,42 @@ exports.initGame = function(sio, socket){
         playerObject.cardsInHand = playerCards;
         // console.log(playerCards.length);
         io.to(playerObject.mySocketId).emit('drawWhiteCards', playerObject);
-        sendCardsToCzar(cardToSend);
+        sendCardsToCzar(cardToSend, playerObject);
       }//ends if
     }//ends for
   }
 
-function sendCardsToCzar(cardToSend){
-  gameId = cardToSend.gameId;
+function sendCardsToCzar(cardToSend, playerObject){
+  gameId = playerObject.gameId;
   cardId = cardToSend.id;
   cardText = cardToSend.text;
   sentBy = cardToSend.playerName;
   relatedSocket = cardToSend.relatedSocket;
-  pool.query('INSERT INTO game_cards_to_judge (game_id, card_id, card_text, sent_by, related_socket) VALUES ($1, $2, $3, $4, $5);',
-  [gameId, cardId, cardText, sentBy, relatedSocket], function(err, result) {
-    pool.query('SELECT COUNT(*) FROM game_cards_to_judge WHERE game_id = $1',
-    [gameId], function(err, result) {
-      if (result == 1) { //hard coded
-          console.log('hit the if!!');
+  roomId = cardToSend.roomId;
+  pool.query('INSERT INTO game_cards_to_judge (game_id, card_id, card_text, sent_by, related_socket, roomId) VALUES ($1, $2, $3, $4, $5, $6);',
+  [gameId, cardId, cardText, sentBy, relatedSocket, roomId], function(err, result) {
+    pool.query('SELECT COUNT(*) FROM game_cards_to_judge WHERE game_id = $1 AND roomid = $2',
+    [gameId, roomId], function(err, result) {
+      console.log(result.rowCount);
+      if (result.rowCount == 1) { //hard coded
+          pool.query('SELECT * FROM game_cards_to_judge WHERE game_id = $1 AND roomid = $2',
+          [gameId, roomId], function(err, result) {
+            var cardsToJudge = shuffleArray(result.rows);
+            io.sockets.in(roomId).emit('judgementTime', cardsToJudge);
+          });
       }
     });
   });
+}
+
+function shuffleArray(array) {
+  for (var i = array.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var temp = array[i];
+    array[i] = array[j];
+    array[j] = temp;
+  }
+  return array;
 }
 
 //when the czar is done selecting cards, delete all of the rows from the game_cards_to_judge table where the gameID is the same.
@@ -427,22 +437,22 @@ function sendCardsToCzar(cardToSend){
   // // //   }
   // // // }
   // // //
-  // // // function setRoundWinner(cardsToJudge){
-  // // //   //loops through the array of cards to judge
-  // // //   for (var i = 0; i < cardsToJudge.length; i++) { //loop through cards to judge
-  // // //     //if the card is selected, it's the winner
-  // // //     if(cardsToJudge[i].selected){ //find the card in the array that is selected
-  // // //       //find the player who sent the card and give them points.
-  // // //       var winner = cardsToJudge[i].playerName; //find the user who sent that card, and set them to winner.
-  // // //       for (var i = 0; i < game.players.length; i++) { //loop through the player array
-  // // //         if(game.players[i].playerName == winner){ //whichever player is the winner
-  // // //           game.players[i].playerScore++; //gets a point
-  // // //           return roundWinnerIndex = i;
-  // // //         }//ends if
-  // // //       }//ends for
-  // // //     }//ends if
-  // // //   }//ends for
-  // // // }//ends function
+  // function setRoundWinner(cardsToJudge){
+  //   //loops through the array of cards to judge
+  //   for (var i = 0; i < cardsToJudge.length; i++) { //loop through cards to judge
+  //     //if the card is selected, it's the winner
+  //     if(cardsToJudge[i].selected){ //find the card in the array that is selected
+  //       //find the player who sent the card and give them points.
+  //       var winner = cardsToJudge[i].playerName; //find the user who sent that card, and set them to winner.
+  //       for (var i = 0; i < game.players.length; i++) { //loop through the player array
+  //         if(game.players[i].playerName == winner){ //whichever player is the winner
+  //           game.players[i].playerScore++; //gets a point
+  //           return roundWinnerIndex = i;
+  //         }//ends if
+  //       }//ends for
+  //     }//ends if
+  //   }//ends for
+  // }//ends function
   // // //
   // // // function checkIfGameOver(){
   // // //   for (var i = 0; i < game.players.length; i++) {
