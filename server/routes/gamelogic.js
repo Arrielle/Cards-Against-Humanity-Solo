@@ -103,7 +103,7 @@ exports.initGame = function(sio, socket){
     pool.query('SELECT * FROM game_init LEFT OUTER JOIN players_in_game ON game_init.id = players_in_game.game_id WHERE game_id = $1;',
     [gameId], function(err, result) {
       gameSettings = {
-        gameId: result.rows[0].id,
+        gameId: gameId,
         roomId: result.rows[0].room_id,
         hostSocketId: result.rows[0].hostsocket_id,
         currentBlackCard: result.rows[0].currentblackcard_id,
@@ -263,17 +263,18 @@ exports.initGame = function(sio, socket){
       io.to(players[0].mySocketId).emit('setCzar', true);
       currentCzar = players[0];
     }
+    console.log(gameSettings, currentCzar);
     //update database to let it know which player is czar.
     updateCzarDb(currentCzar, gameSettings.gameId);
   }
 
   function updateCzarDb(currentCzar, gameId){
+    console.log('Game id and current czar', gameId, '||', currentCzar.mySocketId);
     pool.query('UPDATE players_in_game SET isczar = FALSE WHERE game_id = $1;',
     [gameId], function(err, result) {
-      // console.log('UPPER czar land?', result);
       pool.query('UPDATE players_in_game SET isczar = TRUE WHERE game_id = $1 AND mysocket_id = $2;',
       [gameId, currentCzar.mySocketId], function(err, result) {
-        // console.log('whatisupinczarland', result);
+
       });
     });
   }
@@ -285,7 +286,7 @@ exports.initGame = function(sio, socket){
   ******************************** */
 
   function cardsToJudge(playerCards, playerObject){
-    console.log('playerCards', playerCards[0], 'playerObject', playerObject.playerName, '||', playerObject.mySocketId);
+    // console.log('playerCards', playerCards[0], 'playerObject', playerObject.playerName, '||', playerObject.mySocketId);
     for (var j = 0; j < playerCards.length; j++) { //loops through the players cards
       if(playerCards[j].selected){ //finds the ones that have been selected
         var cardToSend = playerCards[j];
@@ -296,9 +297,6 @@ exports.initGame = function(sio, socket){
         sendCardsToCzar(cardToSend);
       }//ends if
     }//ends for
-    // gameIdObject = {gameId: playerCards[0].gameId};
-    // players = [playerObject];
-    // // drawWhiteCardDeck(gameSettings, players)
   }
 
 function sendCardsToCzar(cardToSend){
@@ -309,10 +307,8 @@ function sendCardsToCzar(cardToSend){
   relatedSocket = cardToSend.relatedSocket;
   pool.query('INSERT INTO game_cards_to_judge (game_id, card_id, card_text, sent_by, related_socket) VALUES ($1, $2, $3, $4, $5);',
   [gameId, cardId, cardText, sentBy, relatedSocket], function(err, result) {
-    console.log(err, result);
     pool.query('SELECT COUNT(*) FROM game_cards_to_judge WHERE game_id = $1',
     [gameId], function(err, result) {
-      console.log(err, result);
       if (result == 1) { //hard coded
           console.log('hit the if!!');
       }
