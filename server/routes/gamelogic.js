@@ -56,8 +56,8 @@ exports.initGame = function(sio, socket){
     var playerName = player.playerName; //The players name
     var maxRoomSize = 2; //HARD CODED
     if( room != undefined && room.length <= maxRoomSize){ //check the room to see if it exists and whether or not it is full.
-      console.log(room.length, '||', maxRoomSize);
-      console.log('1 The room exists! Entering room ', player.roomId,'.');
+      // console.log(room.length, '||', maxRoomSize);
+      // console.log('1 The room exists! Entering room ', player.roomId,'.');
       player = {mySocketId: this.id, roomId: player.roomId, playerName: player.playerName} //player object to pass to queries
       // Join the room
       this.join(player.roomId);
@@ -90,7 +90,7 @@ exports.initGame = function(sio, socket){
     //~.:------------>DETERMINES HOW MANY PLAYERS ARE IN THE GAME<------------:.~//
     pool.query('SELECT COUNT(*) FROM game_init LEFT OUTER JOIN players_in_game ON game_init.id = players_in_game.game_id WHERE game_id = $1;',
     [gameId], function(err, result) {
-      console.log('game count Should be hit twice... ', result.rows[0].count);
+      // console.log('game count Should be hit twice... ', result.rows[0].count);
       playersInGame = result.rows[0].count;
       //~.:------------>IF MAX PLAYERS HAVE JOINED THE GAME IT'S TIME TO PULL THE GAME DATA<------------:.~//
       if(playersInGame == 2){ //HARD CODED
@@ -152,7 +152,7 @@ exports.initGame = function(sio, socket){
       gameId = gameSettings.gameId;
       pool.query('SELECT * FROM player_cards_in_hand WHERE game_id = $1 AND player_socket = $2;',
       [gameId, socketId], function(err, result) {
-        console.log(result);
+        // console.log(result);
       });
     }
     drawWhiteCardDeck(gameSettings, players); //LET PLAYERS KNOW
@@ -311,102 +311,116 @@ exports.initGame = function(sio, socket){
     }//ends for
   }
 
-function sendCardsToCzar(cardToSend, playerObject){
-  gameId = playerObject.gameId;
-  cardId = cardToSend.id;
-  cardText = cardToSend.text;
-  sentBy = cardToSend.playerName;
-  relatedSocket = cardToSend.relatedSocket;
-  roomId = cardToSend.roomId;
-  pool.query('INSERT INTO game_cards_to_judge (game_id, card_id, card_text, sent_by, related_socket, roomId) VALUES ($1, $2, $3, $4, $5, $6);',
-  [gameId, cardId, cardText, sentBy, relatedSocket, roomId], function(err, result) {
-    pool.query('SELECT COUNT(*) FROM game_cards_to_judge WHERE game_id = $1 AND roomid = $2',
-    [gameId, roomId], function(err, result) {
-      console.log(result.rowCount);
-      if (result.rowCount == 1) { //hard coded
+  function sendCardsToCzar(cardToSend, playerObject){
+    gameId = playerObject.gameId;
+    cardId = cardToSend.id;
+    cardText = cardToSend.text;
+    sentBy = cardToSend.playerName;
+    relatedSocket = cardToSend.relatedSocket;
+    roomId = cardToSend.roomId;
+    pool.query('INSERT INTO game_cards_to_judge (game_id, card_id, card_text, sent_by, related_socket, roomId) VALUES ($1, $2, $3, $4, $5, $6);',
+    [gameId, cardId, cardText, sentBy, relatedSocket, roomId], function(err, result) {
+      pool.query('SELECT COUNT(*) FROM game_cards_to_judge WHERE game_id = $1 AND roomid = $2',
+      [gameId, roomId], function(err, result) {
+        console.log('row CUNT', result.rowCount);
+        if (result.rowCount == 1) { //hard coded
           pool.query('SELECT * FROM game_cards_to_judge WHERE game_id = $1 AND roomid = $2',
           [gameId, roomId], function(err, result) {
             var cardsToJudge = shuffleArray(result.rows);
             io.sockets.in(roomId).emit('judgementTime', cardsToJudge);
           });
-      }
-    });
-  });
-}
-
-function shuffleArray(array) {
-  for (var i = array.length - 1; i > 0; i--) {
-    var j = Math.floor(Math.random() * (i + 1));
-    var temp = array[i];
-    array[i] = array[j];
-    array[j] = temp;
-  }
-  return array;
-}
-
-function setRoundWinner(cardsToJudge){
-  pool.query('DELETE FROM game_cards_to_judge WHERE game_id = $1;',
-  [cardsToJudge.game_id], function(err, result) {
-  });
-  //loops through the array of cards to judge
-  for (var i = 0; i < cardsToJudge.length; i++) { //loop through cards to judge
-    //if the card is selected, it's the winner
-    if(cardsToJudge[i].selected){ //find the card in the array that is selected
-      //find the player who sent the card and give them points.
-      var winner = cardsToJudge[i].playerName; //find the user who sent that card, and set them to winner.
-      var winningSocket = cardsToJudge[i].related_socket;
-      var gameId = cardsToJudge[i].game_id;
-      var roomId = cardsToJudge[i].roomId;
-      var hostSocket = cardsToJudge[i].hostSocketId;
-      // make a query to the database to find the winner
-      pool.query('UPDATE players_in_game SET score = score + 1 WHERE game_id = $1 AND mysocket_id = $2;',
-      [gameId, winningSocket], function(err, result) {
-        pool.query('SELECT * FROM game_init WHERE id = $1;',
-        [gameId], function(err, result) {
-          hostSocketId = result.rows[0].hostsocket_id;
-          io.to(winningSocket).emit('winner', {message: 'Congrats!'});
-
-          accessingGameData(gameId);
-
-         });
+        }
       });
-      //find the player that matches the socket# and roomid/gameId increase their score.
-          //Return playerInformation again to loop on host
-          //alert the player??? :D
+    });
+  }
 
-    }//ends if
-  }//ends for
-}//ends function
+  function shuffleArray(array) {
+    for (var i = array.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var temp = array[i];
+      array[i] = array[j];
+      array[j] = temp;
+    }
+    return array;
+  }
 
-function tryingToUpdateViews(roomId){
-  io.sockets.in(roomId).emit('updateStatus');
-}
+  function setRoundWinner(cardsToJudge){
+    pool.query('DELETE FROM game_cards_to_judge WHERE game_id = $1;',
+    [cardsToJudge.game_id], function(err, result) {
+    });
+    //loops through the array of cards to judge
+    for (var i = 0; i < cardsToJudge.length; i++) { //loop through cards to judge
+      //if the card is selected, it's the winner
+      if(cardsToJudge[i].selected){ //find the card in the array that is selected
+        //find the player who sent the card and give them points.
+        var winner = cardsToJudge[i].playerName; //find the user who sent that card, and set them to winner.
+        var winningSocket = cardsToJudge[i].related_socket;
+        var gameId = cardsToJudge[i].game_id;
+        var roomId = cardsToJudge[i].roomId;
+        var hostSocket = cardsToJudge[i].hostSocketId;
+        // make a query to the database to find the winner
+        pool.query('UPDATE players_in_game SET score = score + 1 WHERE game_id = $1 AND mysocket_id = $2;',
+        [gameId, winningSocket], function(err, result) {
+          pool.query('SELECT * FROM game_init WHERE id = $1;',
+          [gameId], function(err, result) {
+            hostSocketId = result.rows[0].hostsocket_id;
+            io.to(winningSocket).emit('winner', {message: 'Congrats!'});
+            checkIfGameOver(gameId)
+
+          });
+        });
+        //find the player that matches the socket# and roomid/gameId increase their score.
+        //Return playerInformation again to loop on host
+        //alert the player??? :D
+
+      }//ends if
+    }//ends for
+  }//ends function
+
+  function tryingToUpdateViews(roomId){
+    io.sockets.in(roomId).emit('updateStatus');
+  }
 
 
-// function updateHostViewWinner(gameId){
-//   pool.query('SELECT * FROM game_init LEFT OUTER JOIN players_in_game ON game_init.id = players_in_game.game_id WHERE game_id = $1;',
-//   [gameId], function(err, result) {
-//     var players = [];
-//     for (var i = 0; i < result.rows.length; i++) {
-//       players[i] = {
-//         playerName: result.rows[i].player_name,
-//         gameId: gameId,
-//         mySocketId: result.rows[i].mysocket_id,
-//         score: result.rows[i].score,
-//         isCzar: result.rows[i].isczar,
-//         isReady: result.rows[i].isready,
-//         isRoundWinner: result.rows[i].isroundwinner,
-//         isGameWinner: result.rows[i].isgamewinner,
-//         cardsInHand: [],
-//       }
-//     }
-//     io.to(gameSettings.hostSocketId).emit('gameStartHost', players);
-//   });
-// }
+  // function checkIfGameOver(gameId){
+  //   //~.:------------>CHECKING TO SEE IF THERE IS A WINNER<------------:.~//
+  //   pool.query('SELECT COUNT (*) FROM players_in_game WHERE score > 3 OR score = 3 AND game_id = $1;',
+  //   [gameId], function(err, result) {
+  //     console.log('WINNER?', result.rows[0].count);
+  //     // console.log(result);
+  //     if(result.rows[0].count > 1){
+  //       console.log('WINNER');
+  //     } else{
+  //       accessingGameData(gameId)
+  //     }
+  //   });
+  // }
 
-//when the czar is done selecting cards, delete all of the rows from the game_cards_to_judge table where the gameID is the same.
-//set the next czar
-//draw more cards
+
+  // function updateHostViewWinner(gameId){
+  //   pool.query('SELECT * FROM game_init LEFT OUTER JOIN players_in_game ON game_init.id = players_in_game.game_id WHERE game_id = $1;',
+  //   [gameId], function(err, result) {
+  //     var players = [];
+  //     for (var i = 0; i < result.rows.length; i++) {
+  //       players[i] = {
+  //         playerName: result.rows[i].player_name,
+  //         gameId: gameId,
+  //         mySocketId: result.rows[i].mysocket_id,
+  //         score: result.rows[i].score,
+  //         isCzar: result.rows[i].isczar,
+  //         isReady: result.rows[i].isready,
+  //         isRoundWinner: result.rows[i].isroundwinner,
+  //         isGameWinner: result.rows[i].isgamewinner,
+  //         cardsInHand: [],
+  //       }
+  //     }
+  //     io.to(gameSettings.hostSocketId).emit('gameStartHost', players);
+  //   });
+  // }
+
+  //when the czar is done selecting cards, delete all of the rows from the game_cards_to_judge table where the gameID is the same.
+  //set the next czar
+  //draw more cards
 
 
 

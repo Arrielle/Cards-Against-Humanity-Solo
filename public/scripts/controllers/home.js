@@ -20,7 +20,6 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   socket.on('sendCards', sendCards);
   socket.on('czarView', czarView);
   socket.on('judgementTime', judgementTime);
-  // socket.on('updateStatus', updateStatus)
   socket.on('errorAlert', error);
   // socket.on('message', logItOut);
   //
@@ -141,13 +140,10 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     self.cardsToJudge = cardsToJudge;
   }
 
-  // function updateStatus(){
-  //   $scope.$apply(applyStatus());
-  // }
-  //
-  // function applyStatus(){
-  //   self.playerDone = false;
-  // }
+  socket.on('updateStatus', function () {
+   $scope.cardsToJudge = [];
+   console.log('is this going anywhere?');
+ });
 
   //***********************************//
   //                                   //
