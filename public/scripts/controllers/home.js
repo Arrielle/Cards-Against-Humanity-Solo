@@ -208,7 +208,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       drawBlackCard(databaseId, players, game);
       drawCards(databaseId, players, game);
       setCzar(game);
-      console.log('DATATREE', game.players);
+      // console.log('DATATREE', game.players);
     });
   }
 
