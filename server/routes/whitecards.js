@@ -1,8 +1,5 @@
 var router = require('express').Router();
 var pg = require('pg');
-
-var router = require('express').Router();
-var pg = require('pg');
 var url = require('url');
 
 if(process.env.DATABASE_URL) {
@@ -26,10 +23,6 @@ if(process.env.DATABASE_URL) {
     idleTimeoutMillis: 30000
   };
 }
-
-var pool = new pg.Pool(config);
-
-
 
 var pool = new pg.Pool(config);
 
@@ -58,6 +51,7 @@ router.post('/allWhiteCards', function(req,res){
 
 router.post('/postWhiteCards', function(req, res) {
   var cardObject = req.body;
+  console.log('card object==>', cardObject);
   pool.connect(function(err, client, done) {
     if(err){
       console.log(err);
@@ -68,7 +62,7 @@ router.post('/postWhiteCards', function(req, res) {
           done();
           if(err){
             console.log(err);
-            res.sendStatus(500);
+            res.sendStatus(501);
           }else{
             res.sendStatus(201);
           }
