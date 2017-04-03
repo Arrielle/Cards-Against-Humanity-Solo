@@ -20,6 +20,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   socket.on('sendCards', sendCards);
   socket.on('czarView', czarView);
   socket.on('judgementTime', judgementTime);
+  // socket.on('updateStatus', updateStatus)
   socket.on('errorAlert', error);
   // socket.on('message', logItOut);
   //
@@ -111,6 +112,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     // self.cardsInHand = player.cardsInHand;
     self.player = player;
     self.playerGameTemplate = true;
+    // self.playerDone = false;
   }
 
   function sendCards(player){
@@ -128,6 +130,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   function applyCzarView(isCzar, player){
     self.playerIsCzar = isCzar;
     self.playerGameTemplate = true;
+    self.playerDone = false;
   }
 
   function judgementTime(cardsToJudge){
@@ -137,6 +140,14 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   function applyCards(cardsToJudge){
     self.cardsToJudge = cardsToJudge;
   }
+
+  // function updateStatus(){
+  //   $scope.$apply(applyStatus());
+  // }
+  //
+  // function applyStatus(){
+  //   self.playerDone = false;
+  // }
 
   //***********************************//
   //                                   //

@@ -132,7 +132,7 @@ exports.initGame = function(sio, socket){
         }
       }
       //SET THE CZAR // UPDATE VIEWS
-      drawWhiteCardDeck(gameSettings, players); //LET PLAYERS KNOW
+      checkNumCardsInHand(gameSettings, players);
       drawBlackCard(gameSettings, players); //LET PLAYERS KNOW
       // for (var i = 0; i < players.length; i++) {
       //   io.to(players[i].mySocketId).emit('showPlayerView');
@@ -152,14 +152,13 @@ exports.initGame = function(sio, socket){
       gameId = gameSettings.gameId;
       pool.query('SELECT * FROM player_cards_in_hand WHERE game_id = $1 AND player_socket = $2;',
       [gameId, socketId], function(err, result) {
-        players.cardsInHand = result.rows;
-        drawWhiteCardDeck(gameSettings, players); //LET PLAYERS KNOW
+        console.log(result);
       });
     }
+    drawWhiteCardDeck(gameSettings, players); //LET PLAYERS KNOW
   }
   //~.:------------>DRAW WHITE CARDS AT RANDOM<------------:.~//
   function drawWhiteCardDeck(gameSettings, players){ //Give this function the player array
-    checkNumCardsInHand(gameSettings, players);
     gameId = gameSettings.gameId;
     pool.query('WITH  allgamecards AS (SELECT * FROM game_white_cards WHERE game_white_cards.game_id = $1) SELECT * FROM allgamecards RIGHT OUTER JOIN white_cards ON white_cards.id = allgamecards.white_id WHERE game_id IS NULL AND white_cards.played = false ORDER BY RANDOM();',
     [gameId], function(err, result) {
@@ -346,7 +345,9 @@ function shuffleArray(array) {
 }
 
 function setRoundWinner(cardsToJudge){
-  console.log('what are they sending me?', cardsToJudge);
+  pool.query('DELETE FROM game_cards_to_judge WHERE game_id = $1;',
+  [cardsToJudge.game_id], function(err, result) {
+  });
   //loops through the array of cards to judge
   for (var i = 0; i < cardsToJudge.length; i++) { //loop through cards to judge
     //if the card is selected, it's the winner
@@ -364,8 +365,10 @@ function setRoundWinner(cardsToJudge){
         [gameId], function(err, result) {
           hostSocketId = result.rows[0].hostsocket_id;
           io.to(winningSocket).emit('winner', {message: 'Congrats!'});
-          // updateHostViewWinner(gameId);
-        });
+
+          accessingGameData(gameId);
+
+         });
       });
       //find the player that matches the socket# and roomid/gameId increase their score.
           //Return playerInformation again to loop on host
@@ -374,6 +377,10 @@ function setRoundWinner(cardsToJudge){
     }//ends if
   }//ends for
 }//ends function
+
+function tryingToUpdateViews(roomId){
+  io.sockets.in(roomId).emit('updateStatus');
+}
 
 
 // function updateHostViewWinner(gameId){
