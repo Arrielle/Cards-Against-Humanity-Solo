@@ -14,13 +14,14 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   socket.on('newGameCreated', onNewGameCreated );
   socket.on('errorAlert', error);
   socket.on('playerJoinedRoom', playerJoinedRoom);
-  socket.on('beginNewGame', beginNewGame );
   socket.on('changeHostView', onChangeHostView);
   socket.on('changePlayerView', onChangePlayerView);
   socket.on('dealWhiteCards', dealWhiteCards);
   socket.on('showCzarView', czarView);
   socket.on('czarCards', updateCzarView);
   socket.on('updatePlayerView', updatePlayerView);
+  socket.on('newRound', newRound);
+  // socket.on('sendCardsToServer', sendCardsToServer)
 
   //*************************//
   //                         //
@@ -88,24 +89,18 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   }
 
   function onNewGameCreated(data) {
+    //Data contains : gameId && hostSocketId
     //$scope.$apply allows angular to see the results even though it's happening outside of angular (sockets).
     //$apply() is used to execute an expression in angular from outside of the angular framework.
     //Because we are calling into the angular framework we need to perform proper scope life cycle of exception handling, executing watches.
     $scope.$apply(gameInit(data));
-    //my main issue - I don't have the database ID
-    //I don't have an array of players (for all players)
   }
 
   function gameInit(data) {
-    self.gameSetup.gameId = data.gameId;
-    self.gameSetup.mySocketId = data.mySocketId;
-    self.host.hostSocketId = data.mySocketId;//not getting through
-    self.gameSetup.myRole = 'Host';
-    self.gameSetup.isStarted = true;
-    // gameSetup.Host.numPlayersInRoom = 0;
-    console.log("Game started with ID: " + self.gameSetup.gameId + ' by host: ' + self.gameSetup.mySocketId);
-    console.log('self.gameSetup on game init?', self.gameSetup);
-
+    console.log("Game started with ID: " + data.gameId + ' by host: ' + data.hostSocketId);
+    //shows game init view.
+    self.isStarted = data.gameIsReady;
+    self.gameId = data.gameId;
   }
 
   //*******************//
@@ -131,7 +126,8 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       playerName : self.playerName,
       playerScore: 0,
       cardsInHand: [],
-      isCzar: false
+      isCzar: false,
+      isReady: false
       // numPlayersInRoom : self.host.numPlayersInRoom,
     };
     socket.emit('playerJoinGame', data);
@@ -142,32 +138,15 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     self.playerJoining = true;
   }
 
-  function playerJoinedRoom(data) {
-
+  function playerJoinedRoom(data, gameData) {
     // When a player joins a room, do the updateWaitingScreen funciton.
     updateWaitingScreen(data);
   }
   //
-  function updateWaitingScreen(data) {
-
-    // Update host screen - switch to angular
-    $('#playersWaiting').append('<p/>Player ' + data.playerName + ' joined the game.</p>');
-    $('#playerWaitingMessage').append('<p>Joined Game ' + data.gameId + '. Waiting on other players... Please wait for the game to begin.</p>');
-    // Store the new player's data on the Host.
-    self.host.players.push(data);
-    // Increment the number of players in the room
-    self.host.numPlayersInRoom += 1;
-    // If x players have joined, start the game!
-    if (self.host.numPlayersInRoom === 2) {
-      console.log('Room is full. Initilizing hostRoomFull!');
-      // Let the server know that x players are present.
-      //also send players so that I can fill the empty card array on the server...
-      updateData = {
-        gameId : self.gameSetup.gameId,
-        playersArray : self.host.players
-      }
-      socket.emit('hostRoomFull', updateData);
-    }
+  function updateWaitingScreen(playerData) {
+    // Update host screen - switch to angular!! :)
+    $('#playersWaiting').append('<p/>Player ' + playerData.playerName + ' joined the game.</p>');
+    $('#playerWaitingMessage').append('<p>Joined Game ' + playerData.gameId + '. Waiting on other players... Please wait for the game to begin.</p>');
   }
 
   //************************//
@@ -176,28 +155,35 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //                        //
   //************************//
 
-  function beginNewGame(data) {
-    //spin up host view
-    console.log('game ID in beginNewGame', data.gameId);
-    socket.emit('changeHostView', self.host.hostSocketId)
-    //loop through player sockets to find player socket ID information, and update their view specifically
-    for (var i = 0; i < self.host.players.length; i++) {
-      socketId = self.host.players[i].mySocketId;
-      socket.emit('changePlayerView', socketId);
-    }
+  function onChangeHostView(data, game){
+
+    console.log('game id? ', game.gameId, 'players? ', game.players);
+
+    postNewGameToDatabase(game.gameId, game.players, game);
+    //changes the hosts view
+    changeHostView(data, game);
   }
 
-  function onChangeHostView(data){
-    console.log('Game ID onChangeHostView', self.gameSetup.gameId);
-    postNewGameToDatabase(self.gameSetup.gameId);
-    //changes the hosts view
+  function changeHostView(data, game){
+    console.log('WHAT IS THIS GAME', game.currentBlackCard);
     self.hostGameTemplate = data.hostGameTemplate;
     self.gameSetup.isStarted = data.isStarted;
+    self.gameTemplate = true;
+    self.players = game.players;
+    setCurrentBlackCard(game.currentBlackCard)
+  }
+
+  function setCurrentBlackCard(blackCard){
+    self.currentBlackCard = blackCard;
   }
 
   function onChangePlayerView(data){
-    self.playerGameTemplate = data.playerGameTemplate;
-    self.playerJoining = data.playerJoining;
+    $scope.$apply(applyPlayerView(data));
+  }
+
+  function applyPlayerView(data){
+    self.playerGameTemplate = data.playerGameTemplate; //true
+    self.playerJoining = data.playerJoining; //false
   }
 
   //**********************************************************//
@@ -207,7 +193,9 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //**********************************************************//
 
   //Add game to the database
-  function postNewGameToDatabase(inGameId){
+  function postNewGameToDatabase(inGameId, players, game){
+    //bring data here and put it into setCzar ---
+    console.log('post new game', inGameId);
     gameIdObject = {gameId: inGameId};
     $http({
       method: 'POST',
@@ -215,13 +203,39 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       data: gameIdObject
     }).then(function(response){
       databaseId = response.data[0].id;
-      self.host.databaseId = response.data[0].id
+      game.databaseId = response.data[0].id;
       //Draw a black card. A black card that has been drawn, cannot be drawn again.
-      drawBlackCard(databaseId);
-      drawCards(databaseId);
-      setCzar(self.host.players);
+      drawBlackCard(databaseId, players, game);
+      drawCards(databaseId, players, game);
+      setCzar(game);
+      console.log('DATATREE', game.players);
     });
   }
+
+  function setCzar(game) {
+    console.log('WHAT IS THE GAME.PLAYERS', game.players);
+    if (game.players[0].isCzar){
+      game.players[0].isCzar = false;
+      game.players[1].isCzar = true;
+    } else if (game.players[1].isCzar){
+      game.players[1].isCzar = false;
+      game.players[2].isCzar = true;
+    }
+    else if (game.players[2].isCzar){
+      game.players[2].isCzar = false;
+      game.players[3].isCzar = true;
+    }else if (game.players[3].isCzar){
+      game.players[3].isCzar = false;
+      game.players[0].isCzar = true;
+    }
+    else {
+      game.players[0].isCzar = true;
+    }
+    console.log('WHAT IS THE GAME.PLAYERS', game.players);
+
+    socket.emit('findCzar', game.players)
+  }
+
 
   //****************************//
   //                            //
@@ -230,7 +244,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //****************************//
 
   //~.:------------>DRAW A BLACK CARD<------------:.~//
-  function drawBlackCard(databaseId){
+  function drawBlackCard(databaseId, players, game){
     objectToSend = {gameId: databaseId};
     $http({
       method: 'POST',
@@ -238,12 +252,16 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       data: objectToSend
     }).then(function(response){
       var blackCard = response.data[0]; //this is the black card that was drawn
-      self.host.currentBlackCard = blackCard;
-      console.log('in draw post', self.host.currentBlackCard.text);
-      var blackCardId = response.data[0].id;
-      // console.log('blackCardId', blackCardId, 'databaseId', self.databaseId);
-      //Make sure the black card that was drawn, cannot be drawn again.
+      setCurrentBlackCard(blackCard);
+
+      game.currentBlackCard = blackCard;
+
+      console.log('card text?', game.currentBlackCard.text);
+      console.log('card id?', game.currentBlackCard.id);
+      // console.log('in draw post', self.host.currentBlackCard.text);
+      var blackCardId = game.currentBlackCard.id;
       removeBlackCardFromDeck(blackCardId, databaseId);
+      console.log('game inside of post', game);
     });
   }
   //~.:------------>REMOVE BLACK CARD FROM 'DECK'<------------:.~//
@@ -263,7 +281,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //                            //
   //****************************//
   //~.:------------>DRAW WHITE CARDS AT RANDOM<------------:.~//
-  function drawCards(databaseId){ //Give this function the player array
+  function drawCards(databaseId, players, game){ //Give this function the player array
     objectToSend = {gameId: databaseId}; //I need to send the database ID
     $http({
       method: 'POST',
@@ -271,18 +289,19 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       data: objectToSend //database id object
     }).then(function(response){
       var whiteCardDeck = response.data; //this is the shuffled deck of white cards
-      for (var i = 0; i < self.host.players.length; i++) { //loops through the player array
-        var cardsToDraw = self.gameSetup.whiteCardsRequired - self.host.players[i].cardsInHand.length; //sets the number of cards to draw based on how many are needed
-        addCardsToHand(cardsToDraw, whiteCardDeck, self.host.players[i], databaseId); //takes white cards from the shuffled white deck based on num needed
-        cards = self.host.players[i].cardsInHand; //sets cards to the current players hand of cards.
+      for (var i = 0; i < players.length; i++) { //loops through the player array
+        var cardsToDraw = game.whiteCardsRequired - players[i].cardsInHand.length; //sets the number of cards to draw based on how many are needed
+        addCardsToHand(cardsToDraw, whiteCardDeck, players[i], databaseId, game); //takes white cards from the shuffled white deck based on num needed
+        cards = players[i].cardsInHand; //sets cards to the current players hand of cards.
         for (var j = 0; j < cards.length; j++) { //loops through the players cards and adds them to the database one at a time
           removeCardsFromDeck(cards[j].id, databaseId); //This adds cards to my database so that I can compare later to ensure no cards that have already been drawn are drawn again.
         }
       }
     });
   }
-  //~.:------------>ADD CARDS TO THE PLAYER OBJECT<------------:.~//
-  function addCardsToHand(numberCardsToDraw, deck, player, databaseId) {
+  // ~.:------------>ADD CARDS TO THE PLAYER OBJECT<------------:.~//
+  function addCardsToHand(numberCardsToDraw, deck, player, databaseId, game) {
+    console.log('database id????', databaseId);
     var playerName = player.playerName;
     for (i = 0; i < numberCardsToDraw; i++) {
       var whiteIndex = Math.floor(Math.random() * deck.length); //selects a white card from the deck at random
@@ -291,8 +310,11 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     }
     for (var i = 0; i < player.cardsInHand.length; i++) {
       player.cardsInHand[i].databaseId = databaseId;
+      player.cardsInHand[i].gameId = game.gameId;
+      player.cardsInHand[i].playerName = player.playerName;
+      player.cardsInHand[i].cardsToPick = game.cardsToPick;
     }
-    socket.emit('findPlayersCards', self.host.players);
+    socket.emit('findPlayersCards', game.players);
   }
   //~.:------------>REMOVE THE CARDS FROM THE DECK<------------:.~//
   function removeCardsFromDeck(cardId, databaseId){
@@ -305,11 +327,11 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     });
   }
 
-  function dealWhiteCards(data){
-    $scope.$apply(showCardsOnDom(data));
+  function dealWhiteCards(data, game){
+    $scope.$apply(showCardsOnDom(data, game));
   }
 
-  function showCardsOnDom(data){
+  function showCardsOnDom(data, game){
     self.playerObject = data;
   }
 
@@ -322,9 +344,8 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //~.:------------>SELECT CARD CSS CHANGES<------------:.~//
   self.selectCard = function(card, cardsInHand, playerName, playerObject){
     card.selected = true; //gives the card that was selected a property of 'selected' and sets it to true.
-    card.playerName = playerName;
     playerObject.hasPlayed = true; //need to update the view based on this...
-    var cardsToPick = self.gameSetup.cardsToPick;  //finds out what the current rounds 'number of cards to pick' is set to
+    var cardsToPick = 1;  //finds out what the current rounds 'number of cards to pick' is set to
     var numberOfSelectedCards = checkCardsInHand(cardsInHand);  //Checks to see if the correct number of cards has been chosen
     if (numberOfSelectedCards > cardsToPick){ //if the number of cards selected is > cards to pick, it removes the .selected from all cards in the array.
       for (var i = 0; i < cardsInHand.length; i++) {
@@ -332,36 +353,6 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       }
       card.playerName = playerName;
       card.selected = true; //sets the card that was last clicked as the selected card. (it was removed by my previous if)
-    }
-  }
-
-  //~.:------------>SELECT CARD CSS CHANGES WHEN CZAR SELECTING<------------:.~//
-  self.selectCardCzar = function(card, cardsInHand){
-    card.selected = true; //gives the card that was selected a property of 'selected' and sets it to true.
-    var cardsToPick = self.gameSetup.cardsToPick;  //finds out what the current rounds 'number of cards to pick' is set to
-    var numberOfSelectedCards = checkCardsInHand(cardsInHand);  //Checks to see if the correct number of cards has been chosen
-    if (numberOfSelectedCards > cardsToPick){ //if the number of cards selected is > cards to pick, it removes the .selected from all cards in the array.
-      for (var i = 0; i < cardsInHand.length; i++) {
-        cardsInHand[i].selected = false;
-      }
-      card.selected = true; //sets the card that was last clicked as the selected card. (it was removed by my previous if)
-    }
-  }
-
-  //~.:------------>SEND CARDS TO CZAR<------------:.~//
-  self.sendCardsToCzar = function(playerCards, playerObject){
-    console.log('WHAT IS IN HERE?!', self.host.players);
-    var numberOfSelectedCards = checkCardsInHand(playerCards);
-    var cardsToPick = self.gameSetup.cardsToPick;  //finds out what the current rounds 'number of cards to pick' is set to
-    if (numberOfSelectedCards == cardsToPick) {
-      // nextPlayer(player); //sends white cards, and sets the next player.
-      whiteCardsToSend(playerCards);
-      //this updates the czar view if everyone has played.
-      if (self.host.cardsToJudge.length == 1){
-        socket.emit('cardsToJudge', self.host);
-        //clear any placeholder cards
-      }
-      socket.emit('playerHideButton', playerObject);
     }
   }
 
@@ -376,39 +367,23 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   return numberOfSelectedCards;
 }
 
-//~.:------------>TIES PLAYER TO CARD THAT WAS SENT<------------:.~//
-function whiteCardsToSend(playerCards){
-  for (var i = 0; i < playerCards.length; i++) { //loops through the players cards
-    if(playerCards[i].selected){ //finds the ones that have been selected
-      self.host.cardsToJudge.push(playerCards[i]); //adds the card to the cards to judge array.
-      playerCards.splice(i, 1);
-      for (var i = 0; i < self.host.cardsToJudge.length; i++) {//changes all cards in the array from selected to unselected.
-        self.host.cardsToJudge[i].selected = false;
-      }//ends for
-    }//ends if
-  }//ends for
-  shuffleArray(self.host.cardsToJudge); //shuffles the array so that the czar doesn't know who the card came from.
-}//ends function
-
-//~.:------------>SHUFFLE THE WHITE CARDS SO THE CZAR DOESN'T KNOW WHO SENT THEM<------------:.~//
-function shuffleArray(array) {
-  for (var i = array.length - 1; i > 0; i--) {
-    var j = Math.floor(Math.random() * (i + 1));
-    var temp = array[i];
-    array[i] = array[j];
-    array[j] = temp;
+//~.:------------>SELECT CARD CSS CHANGES WHEN CZAR SELECTING<------------:.~//
+self.selectCardCzar = function(card, cardsInHand){
+  card.selected = true; //gives the card that was selected a property of 'selected' and sets it to true.
+  var cardsToPick = self.gameSetup.cardsToPick;  //finds out what the current rounds 'number of cards to pick' is set to
+  var numberOfSelectedCards = checkCardsInHand(cardsInHand);  //Checks to see if the correct number of cards has been chosen
+  if (numberOfSelectedCards > cardsToPick){ //if the number of cards selected is > cards to pick, it removes the .selected from all cards in the array.
+    for (var i = 0; i < cardsInHand.length; i++) {
+      cardsInHand[i].selected = false;
+    }
+    card.selected = true; //sets the card that was last clicked as the selected card. (it was removed by my previous if)
   }
-  return array;
 }
 
-//loop through self.host.cardsToJudge and find the username of people who have sent cardsToJudge
-
-// function checkIfPlayed(){
-//   for (var i = 0; i < self.host.cardsToJudge.length; i++) {
-//     var playerName = self.host.cardsToJudge[i].playerName
-//     socket.emit('checkIfPlayed', playerName);
-//   }
-// }
+//~.:------------>SEND CARDS TO CZAR<------------:.~//
+self.sendCardsToCzar = function(playerCards, playerObject){
+  socket.emit('sendCardsToCzar', playerCards, playerObject)
+}
 
 //**********************//
 //                      //
@@ -417,11 +392,16 @@ function shuffleArray(array) {
 //**********************//
 //~.:------------>SETS THE CURRENT CZAR<------------:.~//
 //hard coded who czar is... NEED TO MAKE DYNAMIC
-function setCzar(player){
-  socket.emit('setCzar', self.host.players);
-}
+// function setCzar(players){
+//   console.log('setCzar: ', players);
+//   socket.emit('setCzar', players);
+// }
 //~.:------------>CHANGES THE CZAR VIEW<------------:.~//
 function czarView(data){
+  $scope.$apply(fuckinghell(data));
+}
+
+function fuckinghell(data){
   self.playerIsCzar = data;
 }
 
@@ -431,15 +411,18 @@ function updateCzarView(data){
 }
 
 function cardsToJudgeUpdateView(data){
-  self.host.cardsToJudge = data;
+  self.cardsToJudge = data;
+  //need game here
 }
 
-function updatePlayerView(data){
-  $scope.$apply(playerHasPlayed(data));
+function updatePlayerView(data, playerObject){
+  $scope.$apply(playerHasPlayed(data, playerObject));
 }
 
-function playerHasPlayed(data){
-  self.playerDone = true;
+function playerHasPlayed(data, playerObject){
+  console.log('here is some epic data', playerObject);
+  self.playerObject.playersObject.cardsInHand = playerObject.cardsInHand;
+  self.playerDone = data;
 }
 
 //Sets all players isCzar to false
@@ -458,24 +441,21 @@ function noCzar(){
 //                           //
 //***************************//
 
-self.selectRoundWinner = function(host){
-  console.log('WHAT IS IN HERE?!', self.host.players);
-  //  NEED THE DATABASE ID
-  //  Go through the array of cards and make sure that one of them is selected
-  for (var i = 0; i < self.host.cardsToJudge.length; i++) {
-    if(self.host.cardsToJudge[i].selected){
-      setRoundWinner(); //finds who won the round and awards them points
-      //ALERT USERS WHO WON... THEN RESET EVERYTHING
-      checkIfGameOver(); //checks to see if anyone has 10 points yet
-      newRound(); //sets up for a new round
-      // drawBlackCard(self.host.databaseId); //draws a new black card NEED DATABASE ID
-      // drawCards(self.host.databaseId); // draws white cards NEED DATABASE ID
-      // setCzar(self.host.players); //needs to set current czar to nothing and then set the next czar
-      //UPDATE ALL VIEWS
-      console.log(self.host.currentBlackCard.text);
-      console.log('HOST', self.host);
-    }
-  }
+self.selectRoundWinner = function(cardsToJudge){
+  //go to the server -> figure out who was
+  socket.emit('selectRoundWinner', cardsToJudge);
+}
+
+function newRound(game){
+  databaseId = game.databaseId;
+  players = game.players;
+  console.log('ALS;DKJF;ALSDKJF;ALSDJFK', game);
+  drawBlackCard(databaseId, players, game); //good.
+  drawCards(databaseId, players, game);
+  setCzar(game); //needs work.
+
+  // drawBlackCard(databaseId, players, game);
+  // drawCards(databaseId, players, game);
 }
 
 function setRoundWinner(){
@@ -494,29 +474,6 @@ function setRoundWinner(){
   }//ends for
 }//ends function
 
-function checkIfGameOver(){
-  for (var i = 0; i < self.host.players.length; i++) {
-    if (self.host.players[i].points >= self.host.pointsToWin){
-      self.host.winner = self.host.players[i].playerName;
-      self.host.isOver = true;
-    }
-  }
-  if(self.host.isOver){
-    for (var i = 0; i < self.host.players.length; i++) {
-      self.host.players[i].isCzar = false;
-      console.log('THE GAME IS OVER!');
-    }
-  }
-  console.log('GAME IS NOT OVER');
-}
-
-function newRound(){
-  if(!self.host.isOver){
-    self.host.currentRound++;
-    self.host.currentBlackCard = null;
-    self.host.cardsToJudge = [];
-  }
-}
 
 //loop through all players, if every player who is not czar hasPlayed, display the button on the czar view
 //
