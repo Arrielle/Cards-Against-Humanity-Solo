@@ -108,8 +108,8 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //    Player Join    //
   //                   //
   //*******************//
-  self.gameId = null;
-  self.playerName = null;
+  // self.gameId = null;
+  // self.playerName = null;
 
 
   function error(data) {
