@@ -51,7 +51,7 @@ router.post('/allWhiteCards', function(req,res){
 
 router.post('/postWhiteCards', function(req, res) {
   var cardObject = req.body;
-  console.log('card object==>', cardObject);
+  // console.log('card object==>', cardObject);
   pool.connect(function(err, client, done) {
     if(err){
       console.log(err);

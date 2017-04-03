@@ -1,5 +1,5 @@
 myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
-  console.log('home controller running');
+  // console.log('home controller running');
   var self = this;
   var socket = io();
 
@@ -21,6 +21,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   socket.on('czarCards', updateCzarView);
   socket.on('updatePlayerView', updatePlayerView);
   socket.on('newRound', newRound);
+  socket.on('gameOver', gameOver);
   // socket.on('sendCardsToServer', sendCardsToServer)
 
   //*************************//
@@ -28,7 +29,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //        Game Data        //
   //                         //
   //*************************//
-
+  self.gameOver = false;
   self.gameSetup = {
     // Keep track of the gameId, which is identical to the ID
     //of the Socket.IO Room used for the players and host to communicate
@@ -80,7 +81,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //Which then runs the onNewGameCreated function
   //Which then spins up the new game information
   self.onCreateClick = function () {
-    console.log('Clicked "Create A Game"');
+    // console.log('Clicked "Create A Game"');
     // data = {
     //   gameData: self.host,
     //   playerData: self.player
@@ -97,7 +98,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   }
 
   function gameInit(data) {
-    console.log("Game started with ID: " + data.gameId + ' by host: ' + data.hostSocketId);
+    // console.log("Game started with ID: " + data.gameId + ' by host: ' + data.hostSocketId);
     //shows game init view.
     self.isStarted = data.gameIsReady;
     self.gameId = data.gameId;
@@ -138,6 +139,20 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     self.playerJoining = true;
   }
 
+  function gameOver(data){
+    $scope.$apply(applyNewView(data));
+  }
+
+  function applyNewView(data){
+    self.gameOver = true;
+    self.playerName = data;
+    self.isStarted = false;
+    self.gameTemplate = false;
+    self.hostGameTemplate = false;
+    self.playerIsCzar = false;
+    console.log('game over');
+  }
+
   function playerJoinedRoom(data, gameData) {
     // When a player joins a room, do the updateWaitingScreen funciton.
     updateWaitingScreen(data);
@@ -173,7 +188,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   }
 
   function changeHostView(data, game){
-    console.log('WHAT IS THIS GAME', game.currentBlackCard);
+    // console.log('WHAT IS THIS GAME', game.currentBlackCard);
     self.hostGameTemplate = data.hostGameTemplate;
     self.gameSetup.isStarted = data.isStarted;
     self.gameTemplate = true;
@@ -203,7 +218,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //Add game to the database
   function postNewGameToDatabase(inGameId, players, game){
     //bring data here and put it into setCzar ---
-    console.log('post new game', inGameId);
+    // console.log('post new game', inGameId);
     gameIdObject = {gameId: inGameId};
     $http({
       method: 'POST',
@@ -221,7 +236,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   }
 
   function setCzar(game) {
-    console.log('WHAT IS THE GAME.PLAYERS', game.players);
+    // console.log('WHAT IS THE GAME.PLAYERS', game.players);
     if (game.players[0].isCzar){
       game.players[0].isCzar = false;
       game.players[1].isCzar = true;
@@ -231,15 +246,17 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     }
     else if (game.players[2].isCzar){
       game.players[2].isCzar = false;
-      game.players[3].isCzar = true;
-    }else if (game.players[3].isCzar){
-      game.players[3].isCzar = false;
       game.players[0].isCzar = true;
+      // game.players[3].isCzar = true;
     }
+    // else if (game.players[3].isCzar){
+    //   game.players[3].isCzar = false;
+    //   game.players[0].isCzar = true;
+    // }
     else {
       game.players[0].isCzar = true;
     }
-    console.log('WHAT IS THE GAME.PLAYERS', game.players);
+    // console.log('WHAT IS THE GAME.PLAYERS', game.players);
 
     socket.emit('findCzar', game.players)
   }
@@ -264,12 +281,12 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
 
       game.currentBlackCard = blackCard;
 
-      console.log('card text?', game.currentBlackCard.text);
-      console.log('card id?', game.currentBlackCard.id);
+      // console.log('card text?', game.currentBlackCard.text);
+      // console.log('card id?', game.currentBlackCard.id);
       // console.log('in draw post', self.host.currentBlackCard.text);
       var blackCardId = game.currentBlackCard.id;
       removeBlackCardFromDeck(blackCardId, databaseId);
-      console.log('game inside of post', game);
+      // console.log('game inside of post', game);
     });
   }
   //~.:------------>REMOVE BLACK CARD FROM 'DECK'<------------:.~//
@@ -309,7 +326,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   }
   // ~.:------------>ADD CARDS TO THE PLAYER OBJECT<------------:.~//
   function addCardsToHand(numberCardsToDraw, deck, player, databaseId, game) {
-    console.log('database id????', databaseId);
+    // console.log('database id????', databaseId);
     var playerName = player.playerName;
     for (i = 0; i < numberCardsToDraw; i++) {
       var whiteIndex = Math.floor(Math.random() * deck.length); //selects a white card from the deck at random
@@ -457,7 +474,7 @@ self.selectRoundWinner = function(cardsToJudge){
 function newRound(game){
   databaseId = game.databaseId;
   players = game.players;
-  console.log('ALS;DKJF;ALSDKJF;ALSDJFK', game);
+  // console.log('ALS;DKJF;ALSDKJF;ALSDJFK', game);
   drawBlackCard(databaseId, players, game); //good.
   drawCards(databaseId, players, game);
   setCzar(game); //needs work.
@@ -481,21 +498,5 @@ function setRoundWinner(){
     }//ends if
   }//ends for
 }//ends function
-
-
-//loop through all players, if every player who is not czar hasPlayed, display the button on the czar view
-//
-
-//check if all players have played their cards
-//if they have, it's time for czar to select a winner
-//award points
-//update host view to reflect new score.
-//check if game winner
-//reset important round information.
-//select the next czar
-//draw white cards
-//draw black card
-//host view needs to reflect who the Czar is.
-
 
 }]);

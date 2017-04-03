@@ -1,8 +1,5 @@
 var router = require('express').Router();
 var pg = require('pg');
-
-var router = require('express').Router();
-var pg = require('pg');
 var url = require('url');
 
 if(process.env.DATABASE_URL) {
@@ -55,7 +52,7 @@ router.post('/allBlackCards', function(req,res){
 // {gameId: self.game.sessionId, cardId: cardId }
 router.post('/postBlackCards', function(req, res) {
   var cardObject = req.body;
-  console.log('here is the post card object', req.body);
+  // console.log('here is the post card object', req.body);
   pool.connect(function(err, client, done) {
     if(err){
       console.log(err);
@@ -76,7 +73,7 @@ router.post('/postBlackCards', function(req, res) {
 });
 
 router.get('/blackCards', function(req,res){
-  console.log('I hit my get BLACKcards route?');
+  // console.log('I hit my get BLACKcards route?');
   pool.connect(function(err, client, done){
     if(err){
       res.sendStatus(500);

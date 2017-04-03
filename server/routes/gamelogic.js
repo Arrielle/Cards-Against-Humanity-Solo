@@ -85,14 +85,14 @@ function hostPrepareGame(data) {
     gameId : game.gameId,
     players : game.players
   };
-  console.log('HOST PREP DATA BBY', data);
+  // console.log('HOST PREP DATA BBY', data);
   beginNewGame();
 
 }
 
 function beginNewGame(data) {
   game.isStarted = true;
-  console.log('new game beginning');
+  // console.log('new game beginning');
   //spin up host view
   // socket.emit('changeHostView', hostSocketId)
   changeHostView();
@@ -105,7 +105,7 @@ function beginNewGame(data) {
 }
 
 function changeHostView(){
-  console.log('at host view?', game.hostSocketId);
+  // console.log('at host view?', game.hostSocketId);
   data = {
     hostGameTemplate: true,
     isStarted: true
@@ -136,7 +136,7 @@ function playerJoinGame(data) {
     //adds the new player to the players array.
     game.players.push(data);
 
-    if (room.length == 5){
+    if (room.length == 4){ //hard coded. Set the room one higher than the # of players you want.
       console.log('GAME IS READY TO START');
       //now it knows that the room is full.
       hostPrepareGame();
@@ -145,10 +145,10 @@ function playerJoinGame(data) {
     io.sockets.in(data.gameId).emit('playerJoinedRoom', data, game);
     //If the room is full.
   } else if (room == undefined){
-    console.log('this room does not exist');
+    console.log('The cake is a lie.');
     // Otherwise, send an error message back to the player.
     this.emit('errorAlert', {message: "Sorry about that! It looks like this room does not exist."} );
-  }else if (room.length > 5){
+  }else if (room.length > 4){//hard coded, set the room one higher than the # of players you want.
     this.emit('errorAlert', {message: "Sorry, but this room is full!"})
     //If the room does not exist
   }
@@ -182,7 +182,7 @@ function findPlayersCards(playersObject){
 
 function sendCardsToServer(playerCards, playerObject){
   game.databaseId = playerCards[0].databaseId;
-  console.log('PlayerCards', playerCards, 'playerObject', playerObject);
+  // console.log('PlayerCards', playerCards, 'playerObject', playerObject);
   var numberOfSelectedCards = checkCardsInHand(playerCards);
   var cardsToPick = game.cardsToPick;  //finds out what the current rounds 'number of cards to pick' is set to
   //if the player has selected ther right number of cards their card is added to the cardsToJudge array
@@ -190,7 +190,7 @@ function sendCardsToServer(playerCards, playerObject){
     // nextPlayer(player); //sends white cards, and sets the next player.
     whiteCardsToSend(playerCards, playerObject);
     //this updates the czar view if everyone has played.
-    if (game.cardsToJudge.length == 3){ //HARD CODED
+    if (game.cardsToJudge.length == 2){ //HARD CODED
       var cardsToJudge = game.cardsToJudge;
       var gameId = game.gameId;
       var player = data;
@@ -256,15 +256,13 @@ function shuffleArray(array) {
 
 
 function findCzar(playersArray){
-  console.log('HEY THERE - players array in findCzar server', playersArray);
+  // console.log('HEY THERE - players array in findCzar server', playersArray);
 
   for (var i = 0; i < playersArray.length; i++) {
     playerSocketId = playersArray[i].mySocketId;
     if(playersArray[i].isCzar){
-      console.log('i czar', i);
       io.to(playerSocketId).emit('showCzarView', true);
     } else if (!playersArray[i].isCzar){
-      console.log('i NOT czar', i);
       io.to(playerSocketId).emit('showCzarView', false)
     }
   }
@@ -280,12 +278,8 @@ function selectRoundWinner(cardsToJudge){
       setRoundWinner(cardsToJudge); //finds who won the round and awards them points
       roundWinner = game.players[roundWinnerIndex];
       //ALERT USERS WHO WON... THEN RESET EVERYTHING
-      checkIfGameOver(); //checks to see if anyone has 10 points yet
-      newRound(); //sets up for a new round
-      changeHostView();
+      checkIfGameOver(game.players); //checks to see if anyone has 10 points yet
 
-      console.log('game should be on round two with no cards to judge', game);
-      io.sockets.in(game.gameId).emit('newRound', game);
 
       // drawBlackCard(self.host.databaseId); //draws a new black card NEED DATABASE ID
       // drawCards(self.host.databaseId); // draws white cards NEED DATABASE ID
@@ -314,27 +308,35 @@ function setRoundWinner(cardsToJudge){
   }//ends for
 }//ends function
 
-function checkIfGameOver(){
-  for (var i = 0; i < game.players.length; i++) {
-    if (game.players[i].points >= game.pointsToWin){
-      game.winner = game.players[i].playerName;
+function checkIfGameOver(players){
+  console.log(players);   //THIS IS UNDEFINED
+  for (var i = 0; i < players.length; i++) {
+    console.log('inside of for');
+    if (players[i].playerScore >= 2){ //hard coded
+      gameWinner = players[i].playerName;
       game.isOver = true;
+      for (var j = 0; j < players.length; j++) {
+        players[j].isCzar = false;
+        io.sockets.in(game.gameId).emit('gameOver', gameWinner);
+      }
     }
   }
-  if(game.isOver){
-    for (var i = 0; i < game.players.length; i++) {
-      game.players[i].isCzar = false;
-      console.log('THE GAME IS OVER!');
-    }
+  if (game.isOver){
+    console.log('THIS IS IT');
+
+  } else {
+    console.log('skipped');
+    newRound(players); //sets up for a new round
+    changeHostView();
+    io.sockets.in(game.gameId).emit('newRound', game);
   }
-  console.log('GAME IS NOT OVER');
 }
 
-function newRound(){
+function newRound(players){
   if(!game.isOver){
     game.currentRound++;
     game.cardsToJudge = [];
     io.sockets.in(game.gameId).emit('czarCards', game.cardsToJudge);
-    io.sockets.in(game.gameId).emit('updatePlayerView', false, game.players);
+    io.sockets.in(game.gameId).emit('updatePlayerView', false, players);
   }
 }

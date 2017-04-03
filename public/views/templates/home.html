@@ -3,7 +3,7 @@
 //    HOME TEMPLATE    //    || This is the view when someone first comes to the site.
 //*********************//
 -->
-<div ng-hide="hc.isStarted || hc.playerJoining || hc.playerGameTemplate || hc.hostGameTemplate">
+<div ng-hide="hc.isStarted || hc.playerJoining || hc.playerGameTemplate || hc.hostGameTemplate || hc.gameOver">
   <div id="header_container">
       <div id="header">
         <h1>Cards<br>Against<br>Humanity</h1>
@@ -33,7 +33,7 @@
 //   PLAYER JOIN TEMPLATE    //    || This is the view when someone clicks Join a Game
 //***************************//
 -->
-<div ng-show ="hc.playerJoining">
+<div ng-show ="hc.playerJoining && !hc.gameOver">
   <div id="header_container">
       <div id="header">
         <h1>Cards<br>Against<br>Humanity</h1>
@@ -61,7 +61,7 @@
 //   PLAYER IN GAME TEMPLATE   //    || This is the player view when game starts.
 //*****************************//
 -->
-<div ng-show="hc.playerGameTemplate" class="card_content">
+<div ng-show="hc.playerGameTemplate && !hc.gameOver" class="card_content">
   <div class = "playerView">
     <div ng-show="!hc.playerIsCzar" class = "nonCzar">
       <div id="header_container_card">
@@ -76,7 +76,7 @@
       <button ng-hide="hc.playerDone" ng-click="hc.sendCardsToCzar(hc.playerObject.playersObject.cardsInHand, hc.playerObject.playersObject)" class="btn btn-primary btn-lg outline sticky_button" type="button" name="button">Send Card</button>
       <button ng-show="hc.playerDone" class="btn btn-primary btn-lg outline sticky_button" type="button" name="button">Waiting on Other Players</button>
     </div>
-    <div ng-show="hc.playerIsCzar" class = "czar">
+    <div ng-show="hc.playerIsCzar && !hc.gameOver" class = "czar">
       <div id="header_container_card">
           <div id="header">
             <h4>{{hc.playerObject.playersObject.playerName}} - You Are the Czar! Select a Winner.</h4>
@@ -97,7 +97,7 @@
 //   GAME INITIALIZE TEMPLATE    //    || This is view when Create Game is clicked.
 //*******************************//
 -->
-<div ng-show="hc.isStarted && !hc.gameTemplate" class="content contained">
+<div ng-show="hc.isStarted && !hc.gameTemplate && !hc.gameOver" class="content contained">
   <div id="header_container">
       <div id="header">
         <h1>Cards<br>Against<br>Humanity</h1>
@@ -120,6 +120,33 @@
 </div>
 
 <!--
+//*******************************//
+//   GAME INITIALIZE TEMPLATE    //    || This is view when Create Game is clicked.
+//*******************************//
+-->
+<div ng-show="hc.gameOver" class="content contained">
+  <div id="header_container">
+      <div id="header">
+        <h1>Cards<br>Against<br>Humanity</h1>
+      </div>
+  </div>
+  <div class="col-xs-0 col-md-2"></div>
+  <div class = "col-xs-12 col-md-8">
+  <h1>GAME OVER</h1>
+  <h3>{{hc.playerName}} is the winner!</h3>
+  <div id="playersWaiting"></div>
+
+</div>
+<div class="col-xs-0 col-md-2"></div>
+  <!-- Below is where I'll show who has joined the room -->
+  <!-- Consider using angular to ng-repeat through players in room. Currently using Jquery  -->
+  <div id="footer_container">
+    <div id="footer">
+    </div>
+</div>
+</div>
+
+<!--
 //***************************//
 //   HOST IN GAME TEMPLATE   //    || This is the host view when game starts.
 //***************************//
@@ -127,7 +154,7 @@
 
 
 <!-- Player Scores - Needs to Change into an NG-REPEAT-->
-<div ng-show="hc.hostGameTemplate" class = "content row">
+<div ng-show="hc.hostGameTemplate && !hc.gameOver" class = "content row">
   <div id="header_container">
       <div id="header">
         <h1>Cards<br>Against<br>Humanity</h1>
