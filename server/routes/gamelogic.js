@@ -144,13 +144,13 @@ function playerJoinGame(data) {
     // Emit an event notifying the clients that the player has joined the room.
     io.sockets.in(data.gameId).emit('playerJoinedRoom', data, game);
     //If the room is full.
-  } else if (room.length > 5){
-    this.emit('errorAlert', {message: "Sorry, but this room is full!"})
-    //If the room does not exist
   } else if (room == undefined){
     console.log('this room does not exist');
     // Otherwise, send an error message back to the player.
     this.emit('errorAlert', {message: "Sorry about that! It looks like this room does not exist."} );
+  }else if (room.length > 5){
+    this.emit('errorAlert', {message: "Sorry, but this room is full!"})
+    //If the room does not exist
   }
 }
 

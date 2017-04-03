@@ -155,6 +155,14 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //                        //
   //************************//
 
+  function error(data) {
+  swal({
+    title: 'Oops...',
+    text: data.message,
+    confirmButtonColor: '#000',
+  });
+}
+
   function onChangeHostView(data, game){
 
     console.log('game id? ', game.gameId, 'players? ', game.players);
