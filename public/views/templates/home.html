@@ -73,13 +73,13 @@
             <div class="card" ng-repeat="card in hc.player.cardsInHand" ng-class="{'card':true,'selectedCard' : card.selected}" ng-click="hc.selectCard(card, hc.player.cardsInHand, hc.player.playerName, hc.player)">
         {{card.text}}
       </div>
-      <button ng-hide="hc.playerDone" ng-click="hc.sendCardsToCzar(hc.playerObject.playersObject.cardsInHand, hc.playerObject.playersObject)" class="btn btn-primary btn-lg outline sticky_button" type="button" name="button">Send Card</button>
+      <button ng-hide="hc.playerDone" ng-click="hc.sendCardsToCzar(hc.player.cardsInHand, hc.player)" class="btn btn-primary btn-lg outline sticky_button" type="button" name="button">Send Card</button>
       <button ng-show="hc.playerDone" class="btn btn-primary btn-lg outline sticky_button" type="button" name="button">Waiting on Other Players</button>
     </div>
     <div ng-show="hc.playerIsCzar" class = "czar">
       <div id="header_container_card">
           <div id="header">
-            <h4>{{hc.playerObject.playersObject.playerName}} - You Are the Czar! Select a Winner.</h4>
+            <h4>{{hc.playerName}} - You Are the Czar! Select a Winner.</h4>
           </div>
       </div>
       <div class="card" ng-repeat="card in hc.cardsToJudge" ng-class="{'card':true,'selectedCard' : card.selected}" ng-click="hc.selectCardCzar(card, hc.cardsToJudge)">
