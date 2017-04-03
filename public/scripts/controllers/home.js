@@ -300,10 +300,10 @@ self.sendCardsToCzar = function(playerCards, playerObject){
 // //                           //
 // //***************************//
 //
-// self.selectRoundWinner = function(cardsToJudge){
-//   //go to the server -> figure out who was
-//   socket.emit('selectRoundWinner', cardsToJudge);
-// }
+self.selectRoundWinner = function(cardsToJudge){
+  //go to the server -> figure out who it was
+  socket.emit('selectRoundWinner', cardsToJudge);
+}
 //
 // function newRound(game){
 //   databaseId = game.databaseId;

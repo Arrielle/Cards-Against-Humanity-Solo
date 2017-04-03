@@ -19,6 +19,7 @@ exports.initGame = function(sio, socket){
   gameSocket.on('hostCreateNewGame', hostCreateNewGame);
   gameSocket.on('playerJoinGame', playerJoinGame);
   gameSocket.on('cardToJudge', cardsToJudge);
+  gameSocket.on('selectRoundWinner', setRoundWinner);
 
   // gameSocket.on('cardsToJudge', cardsToJudge);
   //POSSIBLY HANDLING PG ERRORS?
@@ -145,8 +146,20 @@ exports.initGame = function(sio, socket){
   //    White Card Functions    //
   //                            //
   //****************************//
+  function checkNumCardsInHand(gameSettings, players){
+    for (var i = 0; i < players.length; i++) {
+      socketId = players[i].mySocketId;
+      gameId = gameSettings.gameId;
+      pool.query('SELECT * FROM player_cards_in_hand WHERE game_id = $1 AND player_socket = $2;',
+      [gameId, socketId], function(err, result) {
+        players.cardsInHand = result.rows;
+        drawWhiteCardDeck(gameSettings, players); //LET PLAYERS KNOW
+      });
+    }
+  }
   //~.:------------>DRAW WHITE CARDS AT RANDOM<------------:.~//
   function drawWhiteCardDeck(gameSettings, players){ //Give this function the player array
+    checkNumCardsInHand(gameSettings, players);
     gameId = gameSettings.gameId;
     pool.query('WITH  allgamecards AS (SELECT * FROM game_white_cards WHERE game_white_cards.game_id = $1) SELECT * FROM allgamecards RIGHT OUTER JOIN white_cards ON white_cards.id = allgamecards.white_id WHERE game_id IS NULL AND white_cards.played = false ORDER BY RANDOM();',
     [gameId], function(err, result) {
@@ -175,7 +188,8 @@ exports.initGame = function(sio, socket){
       player.cardsInHand[i].roomId = gameSettings.roomId;
       player.cardsInHand[i].playerName = player.playerName;
       player.cardsInHand[i].relatedSocket = player.mySocketId;
-      addCardToDatabaseHand(player.cardsInHand[i].id, player.cardsInHand[i].text, gameSettings.gameId, player.mySocketId);
+      player.cardsInHand[i].hostSocket = gameSettings.hostSocketId;
+      addCardToDatabaseHand(player.cardsInHand[i].id, player.cardsInHand[i].text, gameSettings.gameId, player.mySocketId, gameSettings.hostSocketId);
     }
     io.to(player.mySocketId).emit('drawWhiteCards', player);
   }
@@ -186,10 +200,15 @@ exports.initGame = function(sio, socket){
     });
   }
 
-  function addCardToDatabaseHand(cardId, cardText, gameId, playerSocket){
+  function addCardToDatabaseHand(cardId, cardText, gameId, playerSocket, hostSocket){
     pool.query('INSERT INTO player_cards_in_hand(card_id, card_text, game_id, player_socket) VALUES ($1, $2, $3, $4);',
     [cardId, cardText, gameId, playerSocket], function(err, result) {
     });
+
+    // pool.query('INSERT INTO player_cards_in_hand(card_id, card_text, game_id, player_socket, hostsocket) VALUES ($1, $2, $3, $4, $5);',
+    // [cardId, cardText, gameId, playerSocket, hostSocket], function(err, result) {
+    //   console.log(err, result);
+    // });
   }
   //****************************//
   //                            //
@@ -326,7 +345,61 @@ function shuffleArray(array) {
   return array;
 }
 
+function setRoundWinner(cardsToJudge){
+  console.log('what are they sending me?', cardsToJudge);
+  //loops through the array of cards to judge
+  for (var i = 0; i < cardsToJudge.length; i++) { //loop through cards to judge
+    //if the card is selected, it's the winner
+    if(cardsToJudge[i].selected){ //find the card in the array that is selected
+      //find the player who sent the card and give them points.
+      var winner = cardsToJudge[i].playerName; //find the user who sent that card, and set them to winner.
+      var winningSocket = cardsToJudge[i].related_socket;
+      var gameId = cardsToJudge[i].game_id;
+      var roomId = cardsToJudge[i].roomId;
+      var hostSocket = cardsToJudge[i].hostSocketId;
+      // make a query to the database to find the winner
+      pool.query('UPDATE players_in_game SET score = score + 1 WHERE game_id = $1 AND mysocket_id = $2;',
+      [gameId, winningSocket], function(err, result) {
+        pool.query('SELECT * FROM game_init WHERE id = $1;',
+        [gameId], function(err, result) {
+          hostSocketId = result.rows[0].hostsocket_id;
+          io.to(winningSocket).emit('winner', {message: 'Congrats!'});
+          // updateHostViewWinner(gameId);
+        });
+      });
+      //find the player that matches the socket# and roomid/gameId increase their score.
+          //Return playerInformation again to loop on host
+          //alert the player??? :D
+
+    }//ends if
+  }//ends for
+}//ends function
+
+
+// function updateHostViewWinner(gameId){
+//   pool.query('SELECT * FROM game_init LEFT OUTER JOIN players_in_game ON game_init.id = players_in_game.game_id WHERE game_id = $1;',
+//   [gameId], function(err, result) {
+//     var players = [];
+//     for (var i = 0; i < result.rows.length; i++) {
+//       players[i] = {
+//         playerName: result.rows[i].player_name,
+//         gameId: gameId,
+//         mySocketId: result.rows[i].mysocket_id,
+//         score: result.rows[i].score,
+//         isCzar: result.rows[i].isczar,
+//         isReady: result.rows[i].isready,
+//         isRoundWinner: result.rows[i].isroundwinner,
+//         isGameWinner: result.rows[i].isgamewinner,
+//         cardsInHand: [],
+//       }
+//     }
+//     io.to(gameSettings.hostSocketId).emit('gameStartHost', players);
+//   });
+// }
+
 //when the czar is done selecting cards, delete all of the rows from the game_cards_to_judge table where the gameID is the same.
+//set the next czar
+//draw more cards
 
 
 
@@ -437,22 +510,7 @@ function shuffleArray(array) {
   // // //   }
   // // // }
   // // //
-  // function setRoundWinner(cardsToJudge){
-  //   //loops through the array of cards to judge
-  //   for (var i = 0; i < cardsToJudge.length; i++) { //loop through cards to judge
-  //     //if the card is selected, it's the winner
-  //     if(cardsToJudge[i].selected){ //find the card in the array that is selected
-  //       //find the player who sent the card and give them points.
-  //       var winner = cardsToJudge[i].playerName; //find the user who sent that card, and set them to winner.
-  //       for (var i = 0; i < game.players.length; i++) { //loop through the player array
-  //         if(game.players[i].playerName == winner){ //whichever player is the winner
-  //           game.players[i].playerScore++; //gets a point
-  //           return roundWinnerIndex = i;
-  //         }//ends if
-  //       }//ends for
-  //     }//ends if
-  //   }//ends for
-  // }//ends function
+
   // // //
   // // // function checkIfGameOver(){
   // // //   for (var i = 0; i < game.players.length; i++) {
