@@ -17,6 +17,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   socket.on('drawNewBlackCard', displayBlackCard);
   socket.on('gameStartHost', gameStartHostView);
   socket.on('drawWhiteCards', drawWhiteCards);
+  socket.on('sendCards', sendCards);
   socket.on('errorAlert', error);
   // socket.on('message', logItOut);
   //
@@ -110,6 +111,14 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     self.playerGameTemplate = true;
   }
 
+  function sendCards(player){
+    $scope.$apply(applyWhiteCards(player));
+  }
+
+  function applySendCards(player){
+    self.player = player;
+  }
+
   //***********************************//
   //                                   //
   //    SELECTING AND SENDING CARDS    //
@@ -155,30 +164,48 @@ self.selectCardCzar = function(card, cardsInHand){
   }
 }
 
-// function playerWaiting(){
-//   self.playerDone
-// }
-
 // ~.:------------>SEND CARDS TO CZAR<------------:.~//
 self.sendCardsToCzar = function(playerCards, playerObject){
-  console.log('PlayerCards', playerCards, 'playerObject', playerObject);
   var numberOfSelectedCards = checkCardsInHand(playerCards);
   if (numberOfSelectedCards == 1){
     socket.emit('cardToJudge', playerCards, playerObject);
+    self.playerDone = true;
   }
 }
 
-
-
-function shuffleArray(array) {
-  for (var i = array.length - 1; i > 0; i--) {
-    var j = Math.floor(Math.random() * (i + 1));
-    var temp = array[i];
-    array[i] = array[j];
-    array[j] = temp;
-  }
-  return array;
-}
+//~.:------------>TIES PLAYER TO CARD THAT WAS SENT<------------:.~//
+// function whiteCardsToSend(playerCards, playerObject){
+//   //NEED TO KNOW ABOUT ALL PLAYERS...
+//   for (var i = 0; i < game.players.length; i++) { //loops through the players (server)
+//     if (game.players[i].mySocketId == playerObject.mySocketId) { //finds the correct socket/player
+//       // console.log('beforesplice', playerObject.cardsInHand.length);
+//       for (var j = 0; j < playerCards.length; j++) { //loops through the players cards
+//         if(playerCards[j].selected){ //finds the ones that have been selected
+//           game.cardsToJudge.push(playerCards[j]); //adds the card to the cards to judge array.
+//           playerCards.splice(j, 1); //also splice the same card from the game.players.cardsInHand
+//           game.players[i].cardsInHand.splice(j, 1);
+//           playerObject.cardsInHand = game.players[i].cardsInHand;
+//           // console.log('aftersplice', playerObject.cardsInHand.length);
+//           io.to(playerObject.mySocketId).emit('updatePlayerView', true, playerObject);
+//         }//ends if
+//       }//ends for
+//     }
+//   }
+//   for (var i = 0; i < game.cardsToJudge.length; i++) {//changes all cards in the array from selected to unselected.
+//     game.cardsToJudge[i].selected = false;
+//   }//ends for
+//   shuffleArray(game.cardsToJudge); //shuffles the array so that the czar doesn't know who the card came from.
+// }//ends function
+//
+// function shuffleArray(array) {
+//   for (var i = array.length - 1; i > 0; i--) {
+//     var j = Math.floor(Math.random() * (i + 1));
+//     var temp = array[i];
+//     array[i] = array[j];
+//     array[j] = temp;
+//   }
+//   return array;
+// }
 // //**********************//
 // //                      //
 // //    CZAR FUNCTIONS    //

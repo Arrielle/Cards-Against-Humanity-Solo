@@ -18,6 +18,8 @@ exports.initGame = function(sio, socket){
   //INITIALIZING GAME
   gameSocket.on('hostCreateNewGame', hostCreateNewGame);
   gameSocket.on('playerJoinGame', playerJoinGame);
+  gameSocket.on('cardToJudge', cardsToJudge);
+
   // gameSocket.on('cardsToJudge', cardsToJudge);
   //POSSIBLY HANDLING PG ERRORS?
   // pool.on('error', function(e, client) {
@@ -175,7 +177,8 @@ exports.initGame = function(sio, socket){
       player.cardsInHand[i].relatedSocket = player.mySocketId;
       addCardToDatabaseHand(player.cardsInHand[i].id, player.cardsInHand[i].text, gameSettings.gameId, player.mySocketId);
     }
-    io.to(player.mySocketId).emit('drawWhiteCards', player);
+    var playerStatus = false;
+    io.to(player.mySocketId).emit('drawWhiteCards', player, playerStatus);
   }
   //~.:------------>REMOVE THE CARDS FROM THE DECK<------------:.~//
   function removeWhiteCardsFromDeck(cardId, gameId){
@@ -185,7 +188,6 @@ exports.initGame = function(sio, socket){
   }
 
   function addCardToDatabaseHand(cardId, cardText, gameId, playerSocket){
-    console.log('card id', cardId, 'cardtext', cardText, 'gameId', gameId, 'playerSocket', playerSocket);
     pool.query('INSERT INTO player_cards_in_hand(card_id, card_text, game_id, player_socket) VALUES ($1, $2, $3, $4);',
     [cardId, cardText, gameId, playerSocket], function(err, result) {
     });
@@ -279,6 +281,18 @@ exports.initGame = function(sio, socket){
   *       GAME LOGIC FUNCTIONS      *
   *                                 *
   ******************************** */
+
+  function cardsToJudge(playerCards, playerObject){
+    console.log('playerCards', playerCards, 'playerObject', playerObject);
+    for (var j = 0; j < playerCards.length; j++) { //loops through the players cards
+      if(playerCards[j].selected){ //finds the ones that have been selected
+        var cardToSend = playerCards[j];
+        playerCards.splice(j, 1); //also splice the same card from the game.players.cardsInHand
+        playerObject.cardsInHand = playerCards;
+        io.to(player.mySocketId).emit('sendCards', playerObject);
+      }//ends if
+    }//ends for
+  }
 
 
   // //~.:------------>TIES PLAYER TO CARD THAT WAS SENT<------------:.~//
