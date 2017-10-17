@@ -1,5 +1,4 @@
 myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
-  // console.log('home controller running');
   var self = this;
   var socket = io();
 
@@ -24,51 +23,53 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   socket.on('gameOver', gameOver);
   // socket.on('sendCardsToServer', sendCardsToServer)
 
-  //*************************//
-  //                         //
-  //        Game Data        //
-  //                         //
-  //*************************//
-  self.gameOver = false;
-  self.gameSetup = {
-    // Keep track of the gameId, which is identical to the ID
-    //of the Socket.IO Room used for the players and host to communicate
-    gameId: 0,
-    //This is used to differentiate between 'Host' and 'Player' browsers.
-    myRole: '',   // 'Player' or 'Host'
-    //The Socket.IO socket object identifier. This is unique for
-    //each player and host. It is generated when the browser initially
-    //connects to the server when the page loads for the first time.
-    mySocketId: '',
-    //Identifies the current round. Starts at 0 because it corresponds
-    //to the array of winning black cards stored on the server.
-    isStarted: false,
-    whiteCardsRequired: 10,
-    cardsToPick: 1,
-    isOver: false
-  }
-
-  self.host = {
-    databaseId: null,
-    numPlayersInRoom: 0,
-    hostSocketId: null,
-    isNewGame: false,
-    isOver: false,
-    players: [],
-    currentBlackCard: null,
-    currentRound: 1,
-    cardsToJudge: [],
-    pointsToWin: 2,
-    winner: null,
-  }
-
-  self.player = {
-    playerName: null,
-    playerScore: null,
-    cardsInHand: [],
-    isCzar: false,
-    isReady: false
-  }
+  // //*************************//
+  // //                         //
+  // //        Game Data        //
+  // //                         //
+  // //*************************//
+  // var self = this;
+  // self.gameOver = false;
+  // self.gameSetup = {
+  //   // Keep track of the gameId, which is identical to the ID
+  //   //of the Socket.IO Room used for the players and host to communicate
+  //   gameId: 0,
+  //   databaseId: 0,
+  //   //This is used to differentiate between 'Host' and 'Player' browsers.
+  //   myRole: '',   // 'Player' or 'Host'
+  //   //The Socket.IO socket object identifier. This is unique for
+  //   //each player and host. It is generated when the browser initially
+  //   //connects to the server when the page loads for the first time.
+  //   mySocketId: '',
+  //   //Identifies the current round. Starts at 0 because it corresponds
+  //   //to the array of winning black cards stored on the server.
+  //   isStarted: false,
+  //   whiteCardsRequired: 10,
+  //   cardsToPick: 1,
+  //   isOver: false
+  // }
+  //
+  // self.host = {
+  //   databaseId: null,
+  //   numPlayersInRoom: 0,
+  //   hostSocketId: null,
+  //   isNewGame: false,
+  //   isOver: false,
+  //   players: [],
+  //   currentBlackCard: null,
+  //   currentRound: 1,
+  //   cardsToJudge: [],
+  //   pointsToWin: 2,
+  //   winner: null,
+  // }
+  //
+  // self.player = {
+  //   playerName: null,
+  //   playerScore: null,
+  //   cardsInHand: [],
+  //   isCzar: false,
+  //   isReady: false
+  // }
 
   //*******************************//
   //                               //
@@ -81,53 +82,41 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //Which then runs the onNewGameCreated function
   //Which then spins up the new game information
   self.onCreateClick = function () {
-    // data = {
-    //   gameData: self.host,
-    //   playerData: self.player
-    // }
     socket.emit('hostCreateNewGame');
   }
 
   function onNewGameCreated(data) {
-    //Data contains : gameId && hostSocketId
+    //Data contains : {roomId, hostSocketId, gameIsReady}
     //$apply() is used to execute an expression in angular from outside of the angular framework.
     //Because we are calling into the angular framework we need to perform proper scope life cycle of exception handling, executing watches.
-    $scope.$apply(gameInit(data));
+    $scope.$apply(self.gameInit(data));
   }
 
-  function gameInit(data) {
-    // console.log("Game started with ID: " + data.gameId + ' by host: ' + data.hostSocketId);
-    //shows game init view.
-    self.isStarted = data.gameIsReady;
-    self.gameId = data.gameId;
+  self.gameInit = function(data) {
+      self.isStarted = data.gameIsReady;
+      self.roomId = data.roomId;
   }
+
 
   //*******************//
   //                   //
   //    Player Join    //
   //                   //
   //*******************//
-  // self.gameId = null;
-  // self.playerName = null;
-
 
   function error(data) {
-    console.log('error?', data);
     alert(data.message);
   }
 
   //player has clicked start
   self.onPlayerStartClick = function () {
-
-    // collect data to send to the server
     var data = {
-      gameId : self.gameId,
+      roomId : self.roomId,
       playerName : self.playerName,
       playerScore: 0,
       cardsInHand: [],
       isCzar: false,
       isReady: false
-      // numPlayersInRoom : self.host.numPlayersInRoom,
     };
     socket.emit('playerJoinGame', data);
   }
@@ -151,14 +140,17 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   }
 
   function playerJoinedRoom(data, gameData) {
-    // When a player joins a room, do the updateWaitingScreen funciton.
-    updateWaitingScreen(data);
+      updateWaitingScreen(data);
   }
+
+  // function playerJoinedRoom(data, gameData) {
+  //   // When a player joins a room, do the updateWaitingScreen funciton.
+  //   updateWaitingScreen(data);
+  // }
   //
   function updateWaitingScreen(playerData) {
-    // Update host screen - switch to angular!! :)
     $('#playersWaiting').append('<p/>Player ' + playerData.playerName + ' joined the game.</p>');
-    $('#playerWaitingMessage').append('<p>Joined Game ' + playerData.gameId + '. Waiting on other players... Please wait for the game to begin.</p>');
+    $('#playerWaitingMessage').append('<p>Joined Game ' + playerData.roomId + '. Waiting on other players... Please wait for the game to begin.</p>');
   }
 
   //************************//
@@ -175,22 +167,19 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   });
 }
 
-  function onChangeHostView(data, game){
-
-    console.log('game id? ', game.gameId, 'players? ', game.players);
-
-    postNewGameToDatabase(game.gameId, game.players, game);
-    //changes the hosts view
-    changeHostView(data, game);
+  function onChangeHostView(data){
+    console.log('change the freakin');
+    startGame(data.roomId, data.players, data);
+    $scope.$apply(changeHostView(data));
   }
 
-  function changeHostView(data, game){
-    // console.log('WHAT IS THIS GAME', game.currentBlackCard);
-    self.hostGameTemplate = data.hostGameTemplate;
-    self.gameSetup.isStarted = data.isStarted;
+  function changeHostView(data){
+    console.log('argh');
+    self.hostGameTemplate = true;
+    self.isStarted = true;
     self.gameTemplate = true;
-    self.players = game.players;
-    setCurrentBlackCard(game.currentBlackCard)
+    self.players = data.players;
+    // setCurrentBlackCard(data.currentBlackCard)
   }
 
   function setCurrentBlackCard(blackCard){
@@ -213,49 +202,34 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //**********************************************************//
 
   //Add game to the database
-  function postNewGameToDatabase(inGameId, players, game){
-    //bring data here and put it into setCzar ---
-    // console.log('post new game', inGameId);
-    gameIdObject = {gameId: inGameId};
-    $http({
-      method: 'POST',
-      url: '/game/newGame',
-      data: gameIdObject
-    }).then(function(response){
-      databaseId = response.data[0].id;
-      game.databaseId = response.data[0].id;
-      //Draw a black card. A black card that has been drawn, cannot be drawn again.
-      drawBlackCard(databaseId, players, game);
-      drawCards(databaseId, players, game);
-      setCzar(game);
-      // console.log('DATATREE', game.players);
-    });
+  function startGame(roomId, players, data){
+      drawBlackCard(roomId, players, data);
+      drawCards(roomId, players, data);
+      setCzar(data);
   }
 
-  function setCzar(game) {
-    // console.log('WHAT IS THE GAME.PLAYERS', game.players);
-    if (game.players[0].isCzar){
-      game.players[0].isCzar = false;
-      game.players[1].isCzar = true;
-    } else if (game.players[1].isCzar){
-      game.players[1].isCzar = false;
-      game.players[2].isCzar = true;
-    }
-    else if (game.players[2].isCzar){
-      game.players[2].isCzar = false;
-      game.players[0].isCzar = true;
-      // game.players[3].isCzar = true;
-    }
-    // else if (game.players[3].isCzar){
-    //   game.players[3].isCzar = false;
-    //   game.players[0].isCzar = true;
+  function setCzar(data) {
+    console.log('czar dara', data);
+    // if (data.players[0].isCzar){
+    //   data.players[0].isCzar = false;
+    //   data.players[1].isCzar = true;
+    // } else if (data.players[1].isCzar){
+    //   data.players[1].isCzar = false;
+    //   data.players[2].isCzar = true;
     // }
-    else {
-      game.players[0].isCzar = true;
-    }
-    // console.log('WHAT IS THE GAME.PLAYERS', game.players);
-
-    socket.emit('findCzar', game.players)
+    // else if (data.players[2].isCzar){
+    //   data.players[2].isCzar = false;
+    //   data.players[0].isCzar = true;
+    //   // game.players[3].isCzar = true;
+    // }
+    // // else if (game.players[3].isCzar){
+    // //   game.players[3].isCzar = false;
+    // //   game.players[0].isCzar = true;
+    // // }
+    // else {
+      data.players[0].isCzar = true;
+    // }
+    socket.emit('findCzar', data.players)
   }
 
 
@@ -266,8 +240,8 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //****************************//
 
   //~.:------------>DRAW A BLACK CARD<------------:.~//
-  function drawBlackCard(databaseId, players, game){
-    objectToSend = {gameId: databaseId};
+  function drawBlackCard(roomId, players, data){
+    objectToSend = {roomId: roomId};
     $http({
       method: 'POST',
       url: '/allBlackCards',
@@ -275,15 +249,13 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     }).then(function(response){
       var blackCard = response.data[0]; //this is the black card that was drawn
       setCurrentBlackCard(blackCard);
-
-      game.currentBlackCard = blackCard;
-
+      data.currentBlackCard = blackCard;
+      self.currentBlackCard = blackCard;
       // console.log('card text?', game.currentBlackCard.text);
       // console.log('card id?', game.currentBlackCard.id);
       // console.log('in draw post', self.host.currentBlackCard.text);
-      var blackCardId = game.currentBlackCard.id;
-      removeBlackCardFromDeck(blackCardId, databaseId);
-      // console.log('game inside of post', game);
+      var blackCardId = data.currentBlackCard.id;
+      removeBlackCardFromDeck(blackCardId, roomId);
     });
   }
   //~.:------------>REMOVE BLACK CARD FROM 'DECK'<------------:.~//
@@ -303,8 +275,9 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //                            //
   //****************************//
   //~.:------------>DRAW WHITE CARDS AT RANDOM<------------:.~//
-  function drawCards(databaseId, players, game){ //Give this function the player array
-    objectToSend = {gameId: databaseId}; //I need to send the database ID
+  function drawCards(roomId, players, data){ //Give this function the player array
+    console.log('data', data);
+    objectToSend = {roomId: roomId}; //I need to send the database ID
     $http({
       method: 'POST',
       url: '/allWhiteCards',
@@ -312,11 +285,11 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     }).then(function(response){
       var whiteCardDeck = response.data; //this is the shuffled deck of white cards
       for (var i = 0; i < players.length; i++) { //loops through the player array
-        var cardsToDraw = game.whiteCardsRequired - players[i].cardsInHand.length; //sets the number of cards to draw based on how many are needed
-        addCardsToHand(cardsToDraw, whiteCardDeck, players[i], databaseId, game); //takes white cards from the shuffled white deck based on num needed
+        var cardsToDraw = data.whiteCardsRequired - players[i].cardsInHand.length; //sets the number of cards to draw based on how many are needed
+        addCardsToHand(cardsToDraw, whiteCardDeck, players[i], roomId, data); //takes white cards from the shuffled white deck based on num needed
         cards = players[i].cardsInHand; //sets cards to the current players hand of cards.
         for (var j = 0; j < cards.length; j++) { //loops through the players cards and adds them to the database one at a time
-          removeCardsFromDeck(cards[j].id, databaseId); //This adds cards to my database so that I can compare later to ensure no cards that have already been drawn are drawn again.
+          removeCardsFromDeck(cards[j].id, roomId); //This adds cards to my database so that I can compare later to ensure no cards that have already been drawn are drawn again.
         }
       }
     });
@@ -428,7 +401,6 @@ function fuckinghell(data){
 }
 
 function updateCzarView(data){
-  console.log(data);
   $scope.$apply(cardsToJudgeUpdateView(data));
 }
 
@@ -442,7 +414,6 @@ function updatePlayerView(data, playerObject){
 }
 
 function playerHasPlayed(data, playerObject){
-  console.log('here is some epic data', playerObject);
   self.playerObject.playersObject.cardsInHand = playerObject.cardsInHand;
   self.playerDone = data;
 }
@@ -468,16 +439,12 @@ self.selectRoundWinner = function(cardsToJudge){
   socket.emit('selectRoundWinner', cardsToJudge);
 }
 
-function newRound(game){
-  databaseId = game.databaseId;
-  players = game.players;
-  // console.log('ALS;DKJF;ALSDKJF;ALSDJFK', game);
-  drawBlackCard(databaseId, players, game); //good.
-  drawCards(databaseId, players, game);
-  setCzar(game); //needs work.
-
-  // drawBlackCard(databaseId, players, game);
-  // drawCards(databaseId, players, game);
+function newRound(data){
+  roomId = data.roomId;
+  players = data.players;
+  drawBlackCard(roomId, players, data);
+  drawCards(roomId, players, data);
+  setCzar(game);
 }
 
 function setRoundWinner(){

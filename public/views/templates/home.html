@@ -43,7 +43,7 @@
     <div class = "col-xs-0 col-md-3"></div>
     <div class = "col-xs-12 col-md-6">
     <input ng-model="hc.playerName" type="text" name="" placeholder="Player Name" value=""/>
-    <input ng-model="hc.gameId" type="text" name="" placeholder="Game ID" value=""/><br>
+    <input ng-model="hc.roomId" type="text" name="" placeholder="Game ID" value=""/><br>
     <button ng-click="hc.onPlayerStartClick()" class="btn btn-primary btn-lg outline" type="button" name="button">Join!</button>
     <div id="playerWaitingMessage"></div>
   </div>
@@ -108,7 +108,7 @@
     <img class = "img-responsive" src="../images/cah.png" style="width:100px;height:100px;" align="middle">
 
   <h3>Open this site on your mobile device {{hc.link}}</h3>
-  <h4>Here is your game ID: {{hc.gameId}}</h4>
+  <h4>Here is your game ID: {{hc.roomId}}</h4>
   <div id="playersWaiting"></div>
 
 </div>
