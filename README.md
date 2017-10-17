@@ -1,13 +1,14 @@
-# chat-example
+# Cards Against Humanity
 
-This is the source code for a very simple chat example used for
-the [Getting Started](http://socket.io/get-started/chat/) guide
-of the Socket.IO website.
+This Application Was Created for my Solo Project at Prime Digital Academy.
 
-Please refer to it to learn how to run this application.
+Heroku Link: https://cards-against-humanity-clone.herokuapp.com
 
-You can also spin up a free Heroku dyno to test it out:
+Number of Players: 3 (Currently set low for testing and presentation purposes. Soon to be dynamically chosen by the players.)
+Points to Win: 2 (Currently set low for testing and presentation purposes. Soon to be dynamically chosen by the players.)
 
-[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy?template=https://github.com/socketio/chat-example)
-
-Besides, the application is deployed on [Now](https://zeit.co/now): https://socketio-chat-example.now.sh/
+To play the game:
+Step 1: Open https://cards-against-humanity-clone.herokuapp.com on a screen that all players can easily view.
+Step 2: Click 'Create a New Game'.
+Step 3: Use a QR scanner and scan the QR code provided, or manually enter the link provided on your mobile device.
+Step 4: Be terrible people! :)
