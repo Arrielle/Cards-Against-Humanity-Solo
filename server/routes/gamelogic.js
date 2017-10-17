@@ -158,7 +158,7 @@ function playerJoinGame(data) {
     });
   } else if (room == undefined){ //If the room does not exist
     console.log('The cake is a lie.');
-    this.emit('errorAlert', {message: "Sorry about that! It looks like this room does not exist."} );
+    this.emit('errorAlert', {message: "Sorry, but it looks like that room doesn't exist!"} );
   }else if (room.length > 3){//hard coded, set the room one higher than the # of players you want.
     this.emit('errorAlert', {message: "Sorry, but this room is full!"})
   }

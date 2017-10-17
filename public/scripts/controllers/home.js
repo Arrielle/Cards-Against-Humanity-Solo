@@ -174,12 +174,10 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   }
 
   function changeHostView(data){
-    console.log('argh');
     self.hostGameTemplate = true;
     self.isStarted = true;
     self.gameTemplate = true;
     self.players = data.players;
-    // setCurrentBlackCard(data.currentBlackCard)
   }
 
   function setCurrentBlackCard(blackCard){
