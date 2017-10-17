@@ -41,7 +41,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     //connects to the server when the page loads for the first time.
     mySocketId: '',
     //Identifies the current round. Starts at 0 because it corresponds
-    //to the array of winnign black cards stored on the server.
+    //to the array of winning black cards stored on the server.
     isStarted: false,
     whiteCardsRequired: 10,
     cardsToPick: 1,
@@ -81,7 +81,6 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //Which then runs the onNewGameCreated function
   //Which then spins up the new game information
   self.onCreateClick = function () {
-    // console.log('Clicked "Create A Game"');
     // data = {
     //   gameData: self.host,
     //   playerData: self.player
@@ -91,7 +90,6 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
 
   function onNewGameCreated(data) {
     //Data contains : gameId && hostSocketId
-    //$scope.$apply allows angular to see the results even though it's happening outside of angular (sockets).
     //$apply() is used to execute an expression in angular from outside of the angular framework.
     //Because we are calling into the angular framework we need to perform proper scope life cycle of exception handling, executing watches.
     $scope.$apply(gameInit(data));
@@ -150,7 +148,6 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     self.gameTemplate = false;
     self.hostGameTemplate = false;
     self.playerIsCzar = false;
-    console.log('game over');
   }
 
   function playerJoinedRoom(data, gameData) {

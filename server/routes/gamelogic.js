@@ -73,7 +73,7 @@ function hostCreateNewGame() {
   this.emit('newGameCreated', {gameId: thisGameId, hostSocketId: this.id, gameIsReady: true});
   // console.log('Host has created a new game!');
   // console.log('Game ID: ', thisGameId, 'Socket ID: ', this.id);
-  // Join the Room and wait for the players
+  // Host Joins the Room and waits for the players
   this.join(thisGameId.toString());
   game.hostSocketId = this.id;
 };
@@ -182,7 +182,6 @@ function findPlayersCards(playersObject){
 
 function sendCardsToServer(playerCards, playerObject){
   game.databaseId = playerCards[0].databaseId;
-  // console.log('PlayerCards', playerCards, 'playerObject', playerObject);
   var numberOfSelectedCards = checkCardsInHand(playerCards);
   var cardsToPick = game.cardsToPick;  //finds out what the current rounds 'number of cards to pick' is set to
   //if the player has selected ther right number of cards their card is added to the cardsToJudge array
@@ -196,7 +195,6 @@ function sendCardsToServer(playerCards, playerObject){
       var player = data;
       io.sockets.in(gameId).emit('czarCards', cardsToJudge);
       // socket.emit('cardsToJudge', self.host);
-      //clear any placeholder cards
     }
   }
 }
@@ -212,10 +210,9 @@ function whiteCardsToSend(playerCards, playerObject){
           playerCards.splice(j, 1); //also splice the same card from the game.players.cardsInHand
           game.players[i].cardsInHand.splice(j, 1);
           playerObject.cardsInHand = game.players[i].cardsInHand;
-          // console.log('aftersplice', playerObject.cardsInHand.length);
           io.to(playerObject.mySocketId).emit('updatePlayerView', true, playerObject);
-        }//ends if
-      }//ends for
+        }
+      }
     }
   }
   for (var i = 0; i < game.cardsToJudge.length; i++) {//changes all cards in the array from selected to unselected.
@@ -278,7 +275,7 @@ function selectRoundWinner(cardsToJudge){
       setRoundWinner(cardsToJudge); //finds who won the round and awards them points
       roundWinner = game.players[roundWinnerIndex];
       //ALERT USERS WHO WON... THEN RESET EVERYTHING
-      checkIfGameOver(game.players); //checks to see if anyone has 10 points yet
+      checkIfGameOver(game.players); //checks to see if anyone has the correct number of points yet
 
 
       // drawBlackCard(self.host.databaseId); //draws a new black card NEED DATABASE ID
@@ -292,24 +289,21 @@ function selectRoundWinner(cardsToJudge){
 }
 
 function setRoundWinner(cardsToJudge){
-  //loops through the array of cards to judge
   for (var i = 0; i < cardsToJudge.length; i++) { //loop through cards to judge
-    //if the card is selected, it's the winner
     if(cardsToJudge[i].selected){ //find the card in the array that is selected
-      //find the player who sent the card and give them points.
       var winner = cardsToJudge[i].playerName; //find the user who sent that card, and set them to winner.
       for (var i = 0; i < game.players.length; i++) { //loop through the player array
-        if(game.players[i].playerName == winner){ //whichever player is the winner
-          game.players[i].playerScore++; //gets a point
+        if(game.players[i].playerName == winner){ //find whichever player won the round
+          game.players[i].playerScore++; //player gets a point
           return roundWinnerIndex = i;
-        }//ends if
-      }//ends for
-    }//ends if
-  }//ends for
-}//ends function
+        }
+      }
+    }
+  }
+}
 
 function checkIfGameOver(players){
-  console.log(players);   //THIS IS UNDEFINED
+  console.log(players);
   for (var i = 0; i < players.length; i++) {
     console.log('inside of for');
     if (players[i].playerScore >= 2){ //hard coded
@@ -322,7 +316,36 @@ function checkIfGameOver(players){
     }
   }
   if (game.isOver){
-    console.log('THIS IS IT');
+    game = {
+      databaseId: null,
+      gameId: null,
+      hostSocketId: null,
+      players: [],
+      currentBlackCard: null,
+      whiteCardsRequired: 10,
+      cardsToPick: 1,
+      currentRound: 1,
+      cardsToJudge: [],
+      pointsToWin: 2,
+      winner: null,
+      isStarted: false,
+      isNewGame: false,
+      isOver: false,
+    }
+
+    player = {
+      playerName: null,
+      socketId: null,
+      playerScore: null,
+      cardsInHand: [],
+      cardsToPick: null,
+      isCzar: false,
+      isReady: false
+    }
+
+    var hostSocketId = null;
+
+    console.log('THE GAME IS OVER');
 
   } else {
     console.log('skipped');

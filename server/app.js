@@ -2,7 +2,7 @@ var express = require('express');
 var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
-var port = process.env.PORT || 3000;
+var port = process.env.PORT || 5000;
 var path = require('path');
 var bodyParser = require('body-parser');
 var favicon = require('serve-favicon')
@@ -32,7 +32,7 @@ io.sockets.on('connection', function (socket) {
     cah.initGame(io, socket);
 });
 
-//Sever Modules
+//Server Modules
 app.use('/game', game);
 app.use('/', blackcards);
 app.use('/', whitecards);
