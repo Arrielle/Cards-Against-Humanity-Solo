@@ -317,13 +317,39 @@ function checkIfGameOver(players){
       game.isOver = true;
       for (var j = 0; j < players.length; j++) {
         players[j].isCzar = false;
+
         io.sockets.in(game.gameId).emit('gameOver', gameWinner);
       }
     }
   }
   if (game.isOver){
     console.log('THIS IS IT');
+    game = {
+      databaseId: null,
+      gameId: null,
+      hostSocketId: null,
+      players: [],
+      currentBlackCard: null,
+      whiteCardsRequired: 10,
+      cardsToPick: 1,
+      currentRound: 1,
+      cardsToJudge: [],
+      pointsToWin: 2,
+      winner: null,
+      isStarted: false,
+      isNewGame: false,
+      isOver: false,
+    }
 
+    player = {
+      playerName: null,
+      socketId: null,
+      playerScore: null,
+      cardsInHand: [],
+      cardsToPick: null,
+      isCzar: false,
+      isReady: false
+    }
   } else {
     console.log('skipped');
     newRound(players); //sets up for a new round
