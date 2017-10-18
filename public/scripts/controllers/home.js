@@ -168,7 +168,6 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
 }
 
   function onChangeHostView(data){
-    console.log('change the freakin');
     startGame(data.roomId, data.players, data);
     $scope.$apply(changeHostView(data));
   }
@@ -207,7 +206,6 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   }
 
   function setCzar(data) {
-    console.log('czar dara', data);
     // if (data.players[0].isCzar){
     //   data.players[0].isCzar = false;
     //   data.players[1].isCzar = true;
@@ -249,9 +247,6 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       setCurrentBlackCard(blackCard);
       data.currentBlackCard = blackCard;
       self.currentBlackCard = blackCard;
-      // console.log('card text?', game.currentBlackCard.text);
-      // console.log('card id?', game.currentBlackCard.id);
-      // console.log('in draw post', self.host.currentBlackCard.text);
       var blackCardId = data.currentBlackCard.id;
       removeBlackCardFromDeck(blackCardId, roomId);
     });
@@ -273,13 +268,12 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
   //                            //
   //****************************//
   //~.:------------>DRAW WHITE CARDS AT RANDOM<------------:.~//
-  function drawCards(roomId, players, data){ //Give this function the player array
-    console.log('data', data);
-    objectToSend = {roomId: roomId}; //I need to send the database ID
+  function drawCards(roomId, players, data){
+    objectToSend = {roomId: roomId}; //Send the game id to the sever so that we can check for all white cards that have not been played in this game.
     $http({
       method: 'POST',
       url: '/allWhiteCards',
-      data: objectToSend //database id object
+      data: objectToSend
     }).then(function(response){
       var whiteCardDeck = response.data; //this is the shuffled deck of white cards
       for (var i = 0; i < players.length; i++) { //loops through the player array
@@ -293,8 +287,7 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
     });
   }
   // ~.:------------>ADD CARDS TO THE PLAYER OBJECT<------------:.~//
-  function addCardsToHand(numberCardsToDraw, deck, player, databaseId, game) {
-    // console.log('database id????', databaseId);
+  function addCardsToHand(numberCardsToDraw, deck, player, roomId, data) {
     var playerName = player.playerName;
     for (i = 0; i < numberCardsToDraw; i++) {
       var whiteIndex = Math.floor(Math.random() * deck.length); //selects a white card from the deck at random
@@ -302,21 +295,20 @@ myApp.controller('HomeController', ['$scope', '$http', function($scope, $http) {
       deck.splice(whiteIndex, 1); //Removes the random card from the shuffled deck.
     }
     for (var i = 0; i < player.cardsInHand.length; i++) {
-      player.cardsInHand[i].databaseId = databaseId;
-      player.cardsInHand[i].gameId = game.gameId;
+      player.cardsInHand[i].roomId = roomId;
+      // player.cardsInHand[i].gameId = game.gameId;
       player.cardsInHand[i].playerName = player.playerName;
-      player.cardsInHand[i].cardsToPick = game.cardsToPick;
+      // player.cardsInHand[i].cardsToPick = game.cardsToPick;
     }
-    socket.emit('findPlayersCards', game.players);
+    socket.emit('findPlayersCards', data.players);
   }
   //~.:------------>REMOVE THE CARDS FROM THE DECK<------------:.~//
-  function removeCardsFromDeck(cardId, databaseId){
-    var whiteCardObject = {gameId: databaseId, cardId: cardId };
+  function removeCardsFromDeck(cardId, roomId){
+    var whiteCardObject = {roomId: roomId, cardId: cardId };
     $http({
       method: 'POST',
       url: '/postWhiteCards',
       data: whiteCardObject
-    }).then(function(response){
     });
   }
 
@@ -399,6 +391,7 @@ function fuckinghell(data){
 }
 
 function updateCzarView(data){
+  console.log('FA;LSJDFKA;LSFJD');
   $scope.$apply(cardsToJudgeUpdateView(data));
 }
 

@@ -40,8 +40,6 @@ exports.initGame = function(sio, socket){
 
   gameSocket.emit('connected', { message: "You are connected!" });
   gameSocket.on('hostCreateNewGame', hostCreateNewGame);
-  // gameSocket.on('changeHostView', changeHostView);
-  // gameSocket.on('changePlayerView', changePlayerView);
   gameSocket.on('findPlayersCards', findPlayersCards);
   gameSocket.on('selectRoundWinner', selectRoundWinner);
   gameSocket.on('findCzar', findCzar);
@@ -56,25 +54,31 @@ exports.initGame = function(sio, socket){
 ******************************* */
 
 function hostCreateNewGame() { // The 'START' button was clicked and 'hostCreateNewGame' event occurred.
-  var self = this;
-  var socketId = this.id;
-  pool.connect(function(err, client, done) {
-    if(err){
-      console.log(err);
-    }else{
-      client.query('INSERT INTO game_init (room_id, hostsocket_id, whitecardsrequired, cardstopick, currentround, pointstowin) VALUES ($1, $2, $3, $4, $5, $6) returning id;',
-      [0, socketId, 10, 1, 1, 2], function(err, result) {
-        done();
-        if(err){
-          console.log(err);
-        }else{
-          var thisRoomId = result.rows[0].id; // Room ID is the id from the database
-          self.emit('newGameCreated', {roomId: thisRoomId, hostSocketId: this.id, gameIsReady: true}); // Return the Room ID (roomid) and the socket ID (mySocketId) to the browser client
-          self.join(thisRoomId.toString()); // Host Joins the Room and waits for the players
-        }
-      });
-    }
-  });
+var self = this;
+var socketId = this.id;
+var whiteCardsRequired = 10;
+var cardsToPick = 1;
+var currentRound = 1;
+var pointsToWin = 2
+
+pool.connect(function(err, client, done) {
+  if(err){
+    console.log(err);
+  }else{
+    client.query('INSERT INTO game_init (room_id, hostsocket_id, whitecardsrequired, cardstopick, currentround, pointstowin) VALUES ($1, $2, $3, $4, $5, $6) returning id;',
+    [0, socketId, whiteCardsRequired, cardsToPick, currentRound, pointsToWin], function(err, result) {
+      done();
+      if(err){
+        console.log(err);
+      }else{
+        var thisRoomId = result.rows[0].id; // Room ID is the id from the database
+        console.log('jeepers', result.rows[0]);
+        self.emit('newGameCreated', {roomId: thisRoomId, hostSocketId: this.id, gameIsReady: true, whitecardsrequired: whiteCardsRequired}); // Return the Room ID (roomid) and the socket ID (mySocketId) to the browser client
+        self.join(thisRoomId.toString()); // Host Joins the Room and waits for the players
+      }
+    });
+  }
+});
 };
 
 function hostPrepareGame(data) {
@@ -87,14 +91,28 @@ function hostPrepareGame(data) {
         if(err){
           console.log(err);
         } else {
-        data.players = result.rows;
-        for (var i = 0; i < data.players.length; i++) {
-          data.players[i].cardsInHand = [];
-          playerSocketId = data.players[i].mysocket_id;
-          changePlayerView(data, playerSocketId);
-          changeHostView(data);
+          pool.connect(function(err, client, done){
+            if(err){
+              res.sendStatus(500);
+            } else {
+              data.players = result.rows;
+              client.query('SELECT whitecardsrequired FROM game_init WHERE id = $1;', [data.roomId], function(err, result){
+                done();
+                if(err){
+                  console.log(err);
+                } else {
+                  data.whiteCardsRequired = result.rows[0].whitecardsrequired;
+                  for (var i = 0; i < data.players.length; i++) {
+                    data.players[i].cardsInHand = [];
+                    playerSocketId = data.players[i].mysocket_id;
+                    changePlayerView(data, playerSocketId);
+                    changeHostView(data);
+                  }
+                }
+              });
+            }
+          });
         }
-      }
       });
     }
   });
@@ -114,7 +132,7 @@ function changeHostView(data){
           data.hostGameTemplate = true;
           data.isStarted = true;
           io.to(data.hostSocketId).emit('changeHostView', data);
-      }
+        }
       });
     }
   });
@@ -135,8 +153,6 @@ function playerJoinGame(data) {
   if( room != undefined && room.length <= 3){ // Look up the room ID in the Socket.IO manager object to make sure it exists and is not full
     data.mySocketId = this.id; // Attach the socket id to the data object.
     this.join(data.roomId); // Join the room
-    // game.players.push(data); //adds the new player to the players array.
-    //TODO: Add players to the database.
     pool.connect(function(err, client, done) {
       if(err){
         console.log(err);
@@ -170,66 +186,116 @@ function changePlayerView(data, playerSocketId){
   io.to(playerSocketId).emit('changePlayerView', data);
 }
 
-function findPlayersCards(playersObject){
-  //players object is all 4 players
-  //loop through these players to find their socket and cards in hand
-  for (var i = 0; i < playersObject.length; i++) {
-    //cards in 'this' players hand.
-    var cards = playersObject[i].cardsInHand;
-    //'this' players socketId
-    var playerSocketId = playersObject[i].mySocketId;
-    //'this' players playerNameupdatePlayerView
-    var name = playersObject[i].playerName
-    //emit these cards specifically to this player
-    io.to(playerSocketId).emit('dealWhiteCards', {playersObject: playersObject[i]});
-    // io.to(playerSocketId).emit('dealWhiteCards', {playerCards: cards, playerName: name, playersObject: playersObject[i]});
-  }
+function findPlayersCards(playersObject){//players object is all players
+  for (var i = 0; i < playersObject.length; i++) {//loop through the players to find their socket and change their views 'deal their cards'
+  var playerSocketId = playersObject[i].mysocket_id;
+  io.to(playerSocketId).emit('dealWhiteCards', {playersObject: playersObject[i]}); //emit these cards specifically to this player
+}
 }
 
 
 function sendCardsToServer(playerCards, playerObject){
-  game.databaseId = playerCards[0].databaseId;
+  var roomId = playerObject.room_id;
   var numberOfSelectedCards = checkCardsInHand(playerCards);
-  var cardsToPick = game.cardsToPick;  //finds out what the current rounds 'number of cards to pick' is set to
-  //if the player has selected ther right number of cards their card is added to the cardsToJudge array
-  if (numberOfSelectedCards == cardsToPick) {
-    // nextPlayer(player); //sends white cards, and sets the next player.
-    whiteCardsToSend(playerCards, playerObject);
-    //this updates the czar view if everyone has played.
-    if (game.cardsToJudge.length == 2){ //HARD CODED
-      var cardsToJudge = game.cardsToJudge;
-      var gameId = game.gameId;
-      var player = data;
-      io.sockets.in(gameId).emit('czarCards', cardsToJudge);
-      // socket.emit('cardsToJudge', self.host);
+  pool.connect(function(err, client, done) {
+    if(err){
+      console.log(err);
+      res.sendStatus(500);
+    }else{
+      client.query('SELECT cardstopick FROM game_init WHERE id = $1',
+      [roomId], function(err, result) {
+        done();
+        if(err){
+          console.log(err);
+        }else{
+          var cardsToPick = result.rows[0].cardstopick;
+          if (numberOfSelectedCards == cardsToPick) {
+            //this updates the czar view if everyone has played.
+            //query the database for cards to judge.
+            pool.connect(function(err, client, done) {
+              if(err){
+                console.log(err);
+              }else{
+                client.query('SELECT * FROM game_cards_to_judge WHERE roomid = $1;',
+                [roomId], function(err, result) {
+                  done();
+                  if(err){
+                    console.log(err);
+                  }else{
+                    var cardsToJudge = result.rows;
+                    pool.connect(function(err, client, done) {
+                      if(err){
+                        console.log(err);
+                        res.sendStatus(500);
+                      }else{
+                        client.query('SELECT * FROM players_in_game WHERE room_id = $1',
+                        [cardObject.roomId, cardObject.cardId.id], function(err, result) {
+                          done();
+                          if(err){
+                            console.log(err);
+                            res.sendStatus(501);
+                          }else{
+                            var playersInGame = result.rows;
+                            whiteCardsToSend(playerCards, playerObject, cardsToJudge, playersInGame);
+                            if (cardsToJudge.length == playersInGame.length){
+                              io.sockets.in(roomId).emit('czarCards', cardsToJudge);
+                            }
+                          }
+                        });
+                      }
+                    });
+                  }
+                });
+              }
+            });
+          }
+        }
+      });
     }
-  }
+  });
 }
 
 //~.:------------>TIES PLAYER TO CARD THAT WAS SENT<------------:.~//
-function whiteCardsToSend(playerCards, playerObject){
-  for (var i = 0; i < game.players.length; i++) { //loops through the players (server)
-    if (game.players[i].mySocketId == playerObject.mySocketId) { //finds the correct socket/player
+function whiteCardsToSend(playerCards, playerObject, cardsToJudge, playersInGame){
+  var roomId = playerObject.room_id;
+  var players = playersInGame;
+  //query the database for players
+  //query the database for cards to judge
+  for (var i = 0; i < players.length; i++) { //For every player in the game
+    if (players[i].mysocket_id == playerObject.mysocket_id) { //if their socket matcheds the current playerObject socket
       for (var j = 0; j < playerCards.length; j++) { //loops through the players cards
         if(playerCards[j].selected){ //finds the ones that have been selected
-          game.cardsToJudge.push(playerCards[j]); //adds the card to the cards to judge array.
-          playerCards.splice(j, 1); //also splice the same card from the game.players.cardsInHand
-          game.players[i].cardsInHand.splice(j, 1);
-          playerObject.cardsInHand = game.players[i].cardsInHand;
+          selectedCard = playerCards[j]
+          pool.connect(function(err, client, done) {
+            if(err){
+              console.log(err);
+            }else{
+              client.query('INSERT INTO game_cards_to_judge (game_id, card_id, card_text, sent_by, related_socket, roomid) VALUES ($1, $2, $3, $4, $5, $6);',
+              [roomId, selectedCard.id, selectedCard.text, playerObject.player_name, playerObject.mysocket_id, roomId], function(err, result) {
+                done();
+                if(err){
+                  console.log(err);
+                }else{
+                }
+              });
+            }
+          });
+          playerCards.splice(j, 1);
+          playerObject.cardsInHand = playerCards;
           io.to(playerObject.mySocketId).emit('updatePlayerView', true, playerObject);
         }
       }
     }
   }
-  for (var i = 0; i < game.cardsToJudge.length; i++) {//changes all cards in the array from selected to unselected.
-    game.cardsToJudge[i].selected = false;
+  for (var i = 0; i < cardsToJudge.length; i++) {//changes all cards in the array from selected to unselected.
+    cardsToJudge[i].selected = false;
   }//ends for
-  shuffleArray(game.cardsToJudge); //shuffles the array so that the czar doesn't know who the card came from.
+  shuffleArray(cardsToJudge); //shuffles the array so that the czar doesn't know who the card came from.
 }//ends function
 
 //~.:------------>DETERMINES HOW MANY CARDS A PLAYER HAS SELECTED TO SEND TO THE CZAR<------------:.~//
 function checkCardsInHand(cardsInHand){
-  var numberOfSelectedCards = 0; //initialized numberOfSelctedCards to 0
+  var numberOfSelectedCards = 0;
   for (var i = 0; i < cardsInHand.length; i++) { //checks to see how many 'numberOfSelectedCards' there really are
   if(cardsInHand[i].selected){
     numberOfSelectedCards++

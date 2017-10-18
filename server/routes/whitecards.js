@@ -36,7 +36,7 @@ router.post('/allWhiteCards', function(req,res){
       res.sendStatus(500);
     }else{
       client.query('WITH  allgamecards AS (SELECT * FROM game_white_cards WHERE game_white_cards.game_id = $1) SELECT * FROM allgamecards RIGHT OUTER JOIN white_cards ON white_cards.id = allgamecards.white_id WHERE game_id IS NULL AND white_cards.played = false ORDER BY RANDOM();',
-        [cardObject.gameId], function(err, result) {
+        [cardObject.roomId], function(err, result) {
           done();
           if(err){
             console.log(err);
@@ -58,7 +58,7 @@ router.post('/postWhiteCards', function(req, res) {
       res.sendStatus(500);
     }else{
       client.query('INSERT INTO game_white_cards (game_id, white_id) VALUES ($1, $2);',
-        [cardObject.gameId, cardObject.cardId.id], function(err, result) {
+        [cardObject.roomId, cardObject.cardId.id], function(err, result) {
           done();
           if(err){
             console.log(err);
